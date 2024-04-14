@@ -1400,6 +1400,8 @@ menu_t MouseDef =
 
 #define MOUSE_SENS_MAX 100
 
+#define MOUSE_SENS_SCALE 8u
+
 //
 // Change Mouse Sensitivities -- killough
 //
@@ -1412,18 +1414,18 @@ void M_DrawMouse(void)
   V_DrawNamePatch(60, 15, 0, "M_MSENS", CR_DEFAULT, VPT_STRETCH);//e6y
 
   //jff 4/3/98 clamp horizontal sensitivity display
-  mhmx = mouseSensitivity_horiz>99? 99 : mouseSensitivity_horiz; /*mead*/
+  mhmx = MIN(mouseSensitivity_horiz / MOUSE_SENS_SCALE, 99); /*mead*/
   M_DrawThermo(MouseDef.x,MouseDef.y+LINEHEIGHT*(mouse_horiz+1),100,mhmx);
   //jff 4/3/98 clamp vertical sensitivity display
-  mvmx = mouseSensitivity_vert>99? 99 : mouseSensitivity_vert; /*mead*/
+  mvmx = MIN(mouseSensitivity_vert / MOUSE_SENS_SCALE, 99); /*mead*/
   M_DrawThermo(MouseDef.x,MouseDef.y+LINEHEIGHT*(mouse_vert+1),100,mvmx);
 
   //e6y
   {
     int mpmx;
-    mpmx = mouseSensitivity_mlook>99? 99 : mouseSensitivity_mlook;
+    mpmx = MIN(mouseSensitivity_mlook / MOUSE_SENS_SCALE, 99);
     M_DrawThermo(MouseDef.x,MouseDef.y+LINEHEIGHT*(mouse_mlook+1),100,mpmx);
-    mpmx = mouse_acceleration>99? 99 : mouse_acceleration;
+    mpmx = MIN(mouse_acceleration, 99);
     M_DrawThermo(MouseDef.x,MouseDef.y+LINEHEIGHT*(mouse_accel+1),100,mpmx);
   }
 }
@@ -1460,12 +1462,10 @@ void M_Mouse(int choice, int *sens)
   switch(choice)
     {
     case 0:
-      if (*sens)
-        --*sens;
+      *sens = MAX(*sens - MOUSE_SENS_SCALE, 0);
       break;
     case 1:
-      if (*sens < 99)
-        ++*sens;              /*mead*/
+      *sens = MIN(*sens + MOUSE_SENS_SCALE, 99 * MOUSE_SENS_SCALE);
       break;
     }
 }
