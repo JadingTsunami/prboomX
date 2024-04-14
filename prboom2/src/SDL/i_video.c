@@ -1517,8 +1517,8 @@ void I_ReadMouse(void)
       event_t event;
       event.type = ev_mousemotion;
       event.data1 = 0;
-      event.data2 = x << 4;
-      event.data3 = -y << 4;
+      event.data2 = x;
+      event.data3 = -y;
 
       D_PostEvent(&event);
     }
