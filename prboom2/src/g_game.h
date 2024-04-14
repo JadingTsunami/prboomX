@@ -229,6 +229,8 @@ extern int  joybstraferight;
 extern int  joybuse;
 extern int  joybspeed;
 
+extern int  keyboardangleturn;
+
 extern int  mousex;
 extern int  mousex_remainder;
 

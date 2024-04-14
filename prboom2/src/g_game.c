@@ -306,7 +306,8 @@ fixed_t sidemove_strafe50[2]  = {0x19, 0x32};
 // CPhipps - made lots of key/button state vars static
 //e6y static
 dboolean gamekeydown[NUMKEYS];
-static int     turnheld;       // for accelerative turning
+static int     turnheld;          // for accelerative turning
+int            keyboardangleturn; // angleturn contribution from keyboard on last cmd
 
 // Set to -1 or +1 to switch to the previous or next weapon.
 
@@ -586,6 +587,8 @@ void G_BuildTiccmd(ticcmd_t* cmd)
       if (joyxmove < 0)
         cmd->angleturn += angleturn[tspeed];
     }
+    
+  keyboardangleturn = cmd->angleturn;
 
   if (gamekeydown[key_up])
     forward += forwardmove[speed];
