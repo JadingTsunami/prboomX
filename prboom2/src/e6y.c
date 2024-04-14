@@ -1083,6 +1083,7 @@ int AccelerateMouse(int val)
 }
 
 int mlooky = 0;
+int mlooky_remainder = 0;
 
 void e6y_G_Compatibility(void)
 {

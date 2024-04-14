@@ -335,7 +335,9 @@ static int *mousebuttons = &mousearray[1];    // allow [-1]
 
 // mouse values are used once
 static int   mousex;
+static int   mousex_remainder;
 static int   mousey;
+static int   mousey_remainder;
 static int   dclicktime;
 static int   dclickstate;
 static int   dclicks;
@@ -951,8 +953,8 @@ static void G_DoLoadLevel (void)
   // clear cmd building stuff
   memset (gamekeydown, 0, sizeof(gamekeydown));
   joyxmove = joyymove = 0;
-  mousex = mousey = 0;
-  mlooky = 0;//e6y
+  mousex = mousex_remainder = mousey = mousey_remainder = 0;
+  mlooky = mlooky_remainder = 0;//e6y
   special_event = 0; paused = false;
   memset (&mousearray, 0, sizeof(mousearray));
   memset (&joyarray, 0, sizeof(joyarray));
@@ -975,6 +977,12 @@ static void G_DoLoadLevel (void)
     }
 }
 
+static void AccumulateMouse(int data, int sensitivity, int ratio, int *out, int *remainder)
+{
+  int total = *remainder + AccelerateMouse(data) * sensitivity;
+  *out += total / ratio;
+  *remainder = total % ratio;
+}
 
 //
 // G_Responder
@@ -1095,14 +1103,14 @@ dboolean G_Responder (event_t* ev)
       //e6y mousey += (ev->data3*(mouseSensitivity_vert))/10;  /*Mead rm *4 */
 
       //e6y
-      mousex += (AccelerateMouse(ev->data2)*(mouseSensitivity_horiz))/10;  /* killough */
+      AccumulateMouse(ev->data2, mouseSensitivity_horiz, 10, &mousex, &mousex_remainder);
       if(GetMouseLook())
         if (movement_mouseinvert)
-          mlooky += (AccelerateMouse(ev->data3)*(mouseSensitivity_mlook))/10;
+          AccumulateMouse(ev->data3, mouseSensitivity_mlook, 10, &mlooky, &mlooky_remainder);
         else
-          mlooky -= (AccelerateMouse(ev->data3)*(mouseSensitivity_mlook))/10;
+          AccumulateMouse(-ev->data3, mouseSensitivity_mlook, 10, &mlooky, &mlooky_remainder);
       else
-        mousey += (AccelerateMouse(ev->data3)*(mouseSensitivity_vert))/40;
+        AccumulateMouse(ev->data3, mouseSensitivity_vert, 40, &mousey, &mousey_remainder);
 
       return true;    // eat events
 
