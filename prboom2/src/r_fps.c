@@ -180,8 +180,6 @@ void R_InterpolateView(player_t *player, fixed_t frac)
     }
     else
     {
-      //doom_printf("%u", GetAccumulatedAngle());
-      doom_printf("huh %d", mousex);
       viewangle = accumulate_angle
           ? R_SmoothPlaying_Get(player) + GetAccumulatedAngle()
           : player->prev_viewangle + FixedMul (frac, R_SmoothPlaying_Get(player) - player->prev_viewangle);
