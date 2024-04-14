@@ -46,9 +46,9 @@
 #define GAME_OPTION_SIZE 64
 
 // mouse sensitivity scaling divisors
-#define MOUSEX_RATIO 10
-#define MLOOKY_RATIO 10
-#define MOUSEY_RATIO 40
+#define MOUSEX_RATIO 16
+#define MLOOKY_RATIO 16
+#define MOUSEY_RATIO 64
 
 dboolean G_Responder(event_t *ev);
 dboolean G_CheckDemoStatus(void);
