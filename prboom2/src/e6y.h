@@ -75,6 +75,7 @@ typedef struct camera_s
   angle_t PrevAngle;
   angle_t PrevPitch;
   int type;
+  int keyboardangleturn;
 } camera_t;
 
 extern dboolean wasWiped;

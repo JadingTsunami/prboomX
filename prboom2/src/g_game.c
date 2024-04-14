@@ -4434,6 +4434,8 @@ void P_WalkTicker()
       if (joyxmove < 0)
         angturn += angleturn[tspeed];
     }
+    
+  walkcamera.keyboardangleturn = angturn;
 
   if (gamekeydown[key_up])
     forward += forwardmove[speed];

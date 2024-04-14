@@ -106,9 +106,18 @@ static dboolean CanPlayerFreeLook(player_t *player)
   return CanPlayerTurn(player) && (!(automapmode & am_active) || (automapmode & am_overlay));
 }
 
-static fixed_t GetAccumulatedAngle()
+static fixed_t GetAngleInterpOffset(fixed_t delta, fixed_t frac)
 {
-  return -((mousex << 16) + (mousex_remainder << 16) / MOUSEX_RATIO);
+  // interpolate as an offset from the current angle
+  return (FixedMul(frac, delta) - delta) << 16;
+}
+
+static fixed_t GetAccumulatedAngle(fixed_t frac)
+{
+  // interpolate keyboard turning
+  fixed_t kbturn = walkcamera.type ? walkcamera.keyboardangleturn : keyboardangleturn;
+  fixed_t offset = GetAngleInterpOffset(kbturn, frac);
+  return -((mousex << 16) + (mousex_remainder << 16) / MOUSEX_RATIO) + offset;
 }
 
 static fixed_t GetAccumulatedPitch()
@@ -119,12 +128,6 @@ static fixed_t GetAccumulatedPitch()
 static angle_t ClampPitch(angle_t pitch)
 {
   return (angle_t)BETWEEN(minViewPitch, maxViewPitch, (int)pitch);
-}
-
-static fixed_t GetKeyboardTurnInterpAngle(fixed_t frac)
-{
-  // interpolate keyboard turning as an offset from the current angle
-  return (FixedMul(frac, keyboardangleturn) - keyboardangleturn) << 16;
 }
 
 void R_InterpolateView(player_t *player, fixed_t frac)
@@ -178,7 +181,7 @@ void R_InterpolateView(player_t *player, fixed_t frac)
     if (walkcamera.type)
     {
       viewangle = accumulate_angle
-          ? walkcamera.angle + GetAccumulatedAngle()
+          ? walkcamera.angle + GetAccumulatedAngle(frac)
           : walkcamera.PrevAngle + FixedMul (frac, walkcamera.angle - walkcamera.PrevAngle);
       viewpitch = accumulate_pitch
           ? ClampPitch(walkcamera.pitch + GetAccumulatedPitch())
@@ -187,7 +190,7 @@ void R_InterpolateView(player_t *player, fixed_t frac)
     else
     {
       viewangle = accumulate_angle
-          ? R_SmoothPlaying_Get(player) + GetAccumulatedAngle() + GetKeyboardTurnInterpAngle(frac)
+          ? R_SmoothPlaying_Get(player) + GetAccumulatedAngle(frac)
           : player->prev_viewangle + FixedMul (frac, R_SmoothPlaying_Get(player) - player->prev_viewangle);
       viewpitch = accumulate_pitch
           ? ClampPitch(player->mo->pitch + GetAccumulatedPitch())
