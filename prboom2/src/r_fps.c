@@ -33,6 +33,7 @@
  */
 
 #include "doomstat.h"
+#include "g_game.h"
 #include "r_defs.h"
 #include "r_state.h"
 #include "p_spec.h"
@@ -95,10 +96,35 @@ static dboolean NoInterpolateView;
 static dboolean didInterp;
 dboolean WasRenderedInTryRunTics;
 
+static dboolean CanPlayerTurn(player_t *player)
+{
+  return player->playerstate != PST_DEAD && player->mo->reactiontime == 0;
+}
+
+static dboolean CanPlayerFreeLook(player_t *player)
+{
+  return CanPlayerTurn(player) && (!(automapmode & am_active) || (automapmode & am_overlay));
+}
+
+static angle_t GetAccumulatedAngle()
+{
+  return -((mousex << 16) + (mousex_remainder << 16) / MOUSEX_RATIO);
+}
+
+static angle_t GetAccumulatedPitch()
+{
+  return +((mlooky << 16) + (mlooky_remainder << 16) / MLOOKY_RATIO);
+}
+
+static angle_t ClampPitch(angle_t pitch)
+{
+  return (angle_t)BETWEEN(minViewPitch, maxViewPitch, (int)pitch);
+}
+
 void R_InterpolateView(player_t *player, fixed_t frac)
 {
   static mobj_t *oviewer;
-
+  
   dboolean NoInterpolate = (paused && !walkcamera.type) || (menuactive && !demoplayback);
 
   viewplayer = player;
@@ -115,6 +141,10 @@ void R_InterpolateView(player_t *player, fixed_t frac)
 
   if (movement_smooth)
   {
+    dboolean accumulate_mouse = !NoInterpolate && !NoInterpolateView;
+    dboolean accumulate_angle = accumulate_mouse && CanPlayerTurn(player);
+    dboolean accumulate_pitch = accumulate_mouse && CanPlayerFreeLook(player);
+
     if (NoInterpolateView)
     {
       NoInterpolateView = false;
@@ -141,13 +171,25 @@ void R_InterpolateView(player_t *player, fixed_t frac)
 
     if (walkcamera.type)
     {
-      viewangle = walkcamera.PrevAngle + FixedMul (frac, walkcamera.angle - walkcamera.PrevAngle);
-      viewpitch = walkcamera.PrevPitch + FixedMul (frac, walkcamera.pitch - walkcamera.PrevPitch);
+      viewangle = accumulate_angle
+          ? walkcamera.angle + GetAccumulatedAngle()
+          : walkcamera.PrevAngle + FixedMul (frac, walkcamera.angle - walkcamera.PrevAngle);
+      viewpitch = accumulate_pitch
+          ? ClampPitch(walkcamera.pitch + GetAccumulatedPitch())
+          : walkcamera.PrevPitch + FixedMul (frac, walkcamera.pitch - walkcamera.PrevPitch);
     }
     else
     {
-      viewangle = player->prev_viewangle + FixedMul (frac, R_SmoothPlaying_Get(player) - player->prev_viewangle) + viewangleoffset;
-      viewpitch = player->prev_viewpitch + FixedMul (frac, player->mo->pitch - player->prev_viewpitch) + viewpitchoffset;
+      //doom_printf("%u", GetAccumulatedAngle());
+      doom_printf("huh %d", mousex);
+      viewangle = accumulate_angle
+          ? R_SmoothPlaying_Get(player) + GetAccumulatedAngle()
+          : player->prev_viewangle + FixedMul (frac, R_SmoothPlaying_Get(player) - player->prev_viewangle);
+      viewpitch = accumulate_pitch
+          ? ClampPitch(player->mo->pitch + GetAccumulatedPitch())
+          : player->prev_viewpitch + FixedMul (frac, player->mo->pitch - player->prev_viewpitch);
+      viewangle += viewangleoffset;
+      viewpitch += viewpitchoffset;
     }
   }
   else

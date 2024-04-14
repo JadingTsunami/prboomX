@@ -172,6 +172,9 @@ extern float skyXShift;
 extern float skyYShift;
 extern dboolean mlook_or_fov;
 
+extern int maxViewPitch;
+extern int minViewPitch;
+
 extern hu_textline_t  w_hudadd;
 extern hu_textline_t  w_centermsg;
 extern hu_textline_t  w_precache;

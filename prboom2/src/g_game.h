@@ -45,6 +45,11 @@
 // killough 5/2/98: number of bytes reserved for saving options
 #define GAME_OPTION_SIZE 64
 
+// mouse sensitivity scaling divisors
+#define MOUSEX_RATIO 10
+#define MLOOKY_RATIO 10
+#define MOUSEY_RATIO 40
+
 dboolean G_Responder(event_t *ev);
 dboolean G_CheckDemoStatus(void);
 void G_DeathMatchSpawnPlayer(int playernum);
@@ -223,6 +228,9 @@ extern int  joybstrafeleft;
 extern int  joybstraferight;
 extern int  joybuse;
 extern int  joybspeed;
+
+extern int  mousex;
+extern int  mousex_remainder;
 
 extern int  key_timewarp_forward;
 extern int  key_timewarp_backward;

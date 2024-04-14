@@ -103,7 +103,6 @@ const char *sdl_video_window_pos;
 static void ActivateMouse(void);
 static void DeactivateMouse(void);
 //static int AccelerateMouse(int val);
-static void I_ReadMouse(void);
 static dboolean MouseShouldBeGrabbed();
 static void UpdateFocus(void);
 
@@ -1506,44 +1505,12 @@ static void DeactivateMouse(void)
   SDL_SetRelativeMouseMode(SDL_FALSE);
 }
 
-//
-// Read the change in mouse state to generate mouse motion events
-//
-// This is to combine all mouse movement for a tic into one mouse
-// motion event.
-
-static void SmoothMouse(int* x, int* y)
-{
-    static int x_remainder_old = 0;
-    static int y_remainder_old = 0;
-
-    int x_remainder, y_remainder;
-    fixed_t correction_factor;
-
-    const fixed_t fractic = I_TickElapsedTime();
-
-    *x += x_remainder_old;
-    *y += y_remainder_old;
-
-    correction_factor = FixedDiv(fractic, FRACUNIT + fractic);
-
-    x_remainder = FixedMul(*x, correction_factor);
-    *x -= x_remainder;
-    x_remainder_old = x_remainder;
-
-    y_remainder = FixedMul(*y, correction_factor);
-    *y -= y_remainder;
-    y_remainder_old = y_remainder;
-}
-
-static void I_ReadMouse(void)
+void I_ReadMouse(void)
 {
   if (mouse_enabled && window_focused)
   {
     int x, y;
-
     SDL_GetRelativeMouseState(&x, &y);
-    SmoothMouse(&x, &y);
 
     if (x != 0 || y != 0)
     {

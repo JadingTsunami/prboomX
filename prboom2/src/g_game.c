@@ -334,8 +334,8 @@ static int mousearray[MAX_MOUSEB + 1];
 static int *mousebuttons = &mousearray[1];    // allow [-1]
 
 // mouse values are used once
-static int   mousex;
-static int   mousex_remainder;
+int          mousex;
+int          mousex_remainder;
 static int   mousey;
 static int   mousey_remainder;
 static int   dclicktime;
@@ -1103,14 +1103,16 @@ dboolean G_Responder (event_t* ev)
       //e6y mousey += (ev->data3*(mouseSensitivity_vert))/10;  /*Mead rm *4 */
 
       //e6y
-      AccumulateMouse(ev->data2, mouseSensitivity_horiz, 10, &mousex, &mousex_remainder);
+      AccumulateMouse(ev->data2, mouseSensitivity_horiz, MOUSEX_RATIO, &mousex, &mousex_remainder);
       if(GetMouseLook())
-        if (movement_mouseinvert)
-          AccumulateMouse(ev->data3, mouseSensitivity_mlook, 10, &mlooky, &mlooky_remainder);
-        else
-          AccumulateMouse(-ev->data3, mouseSensitivity_mlook, 10, &mlooky, &mlooky_remainder);
+      {
+        int y = movement_mouseinvert ? ev->data3 : -ev->data3;
+        AccumulateMouse(y, mouseSensitivity_mlook, MLOOKY_RATIO, &mlooky, &mlooky_remainder);
+      }
       else
-        AccumulateMouse(ev->data3, mouseSensitivity_vert, 40, &mousey, &mousey_remainder);
+      {
+        AccumulateMouse(ev->data3, mouseSensitivity_vert, MOUSEY_RATIO, &mousey, &mousey_remainder);
+      }
 
       return true;    // eat events
 
