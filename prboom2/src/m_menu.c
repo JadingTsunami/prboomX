@@ -1400,7 +1400,10 @@ menu_t MouseDef =
 
 #define MOUSE_SENS_MAX 100
 
-#define MOUSE_SENS_SCALE 8u
+#define MOUSE_SENS_SCALE 8
+
+#define MOUSE_SENS_THERMO_X(value) \
+  MIN(MAX((value), 0) / (unsigned)MOUSE_SENS_SCALE, 99)
 
 //
 // Change Mouse Sensitivities -- killough
@@ -1414,16 +1417,16 @@ void M_DrawMouse(void)
   V_DrawNamePatch(60, 15, 0, "M_MSENS", CR_DEFAULT, VPT_STRETCH);//e6y
 
   //jff 4/3/98 clamp horizontal sensitivity display
-  mhmx = MIN(mouseSensitivity_horiz / MOUSE_SENS_SCALE, 99); /*mead*/
+  mhmx = MOUSE_SENS_THERMO_X(mouseSensitivity_horiz); /*mead*/
   M_DrawThermo(MouseDef.x,MouseDef.y+LINEHEIGHT*(mouse_horiz+1),100,mhmx);
   //jff 4/3/98 clamp vertical sensitivity display
-  mvmx = MIN(mouseSensitivity_vert / MOUSE_SENS_SCALE, 99); /*mead*/
+  mvmx = MOUSE_SENS_THERMO_X(mouseSensitivity_vert); /*mead*/
   M_DrawThermo(MouseDef.x,MouseDef.y+LINEHEIGHT*(mouse_vert+1),100,mvmx);
 
   //e6y
   {
     int mpmx;
-    mpmx = MIN(mouseSensitivity_mlook / MOUSE_SENS_SCALE, 99);
+    mpmx = MOUSE_SENS_THERMO_X(mouseSensitivity_mlook);
     M_DrawThermo(MouseDef.x,MouseDef.y+LINEHEIGHT*(mouse_mlook+1),100,mpmx);
     mpmx = MIN(mouse_acceleration, 99);
     M_DrawThermo(MouseDef.x,MouseDef.y+LINEHEIGHT*(mouse_accel+1),100,mpmx);
