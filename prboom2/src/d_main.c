@@ -436,6 +436,10 @@ void D_Display (fixed_t frac)
     // e6y
     // Boom colormaps should be applied for everything in R_RenderPlayerView
     use_boom_cm=true;
+    
+    // Accumulate mouse inputs for render angles
+    SDL_PumpEvents();
+    I_ReadMouse();
 
     R_InterpolateView(&players[displayplayer], frac);
 
