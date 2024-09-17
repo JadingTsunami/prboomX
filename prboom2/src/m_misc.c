@@ -582,10 +582,10 @@ default_t defaults[] =
   {"use_mouse",{&usemouse},{1},0,1,
    def_bool,ss_none}, // enables use of mouse with DOOM
   //jff 4/3/98 allow unlimited sensitivity
-  {"mouse_sensitivity_horiz",{&mouseSensitivity_horiz},{10},0,UL,
+  {"mouse_sensitivity_horiz",{&mouseSensitivity_horiz},{256},0,UL,
    def_int,ss_none}, /* adjust horizontal (x) mouse sensitivity killough/mead */
   //jff 4/3/98 allow unlimited sensitivity
-  {"mouse_sensitivity_vert",{&mouseSensitivity_vert},{1},0,UL,
+  {"mouse_sensitivity_vert",{&mouseSensitivity_vert},{24},0,UL,
    def_int,ss_none}, /* adjust vertical (y) mouse sensitivity killough/mead */
   //jff 3/8/98 allow -1 in mouse bindings to disable mouse function
   {"mouseb_fire",{&mousebfire},{0},-1,MAX_MOUSEB,
@@ -1072,7 +1072,7 @@ default_t defaults[] =
   {"PrboomX mouse settings",{NULL},{0},UL,UL,def_none,ss_none},
   {"mouse_acceleration",{&mouse_acceleration},{0},0,UL,
    def_int,ss_none},
-  {"mouse_sensitivity_mlook",{&mouseSensitivity_mlook},{10},0,UL,
+  {"mouse_sensitivity_mlook",{&mouseSensitivity_mlook},{256},0,UL,
    def_int,ss_none},
   {"mouse_doubleclick_as_use", {&mouse_doubleclick_as_use},  {1},0,1,
    def_bool,ss_stat},
