@@ -388,6 +388,8 @@ static void G_TimeWarpLoadAnchorPoint(int position);
 static void G_TimeWarpReset();
 static void G_TimeWarpTicker();
 
+static void G_StatTicker();
+
 static int G_GetWADCompatibilityLevel();
 
 static void G_DoSaveGame (dboolean menu);
@@ -1324,6 +1326,7 @@ void G_Ticker (void)
       HU_Ticker ();
       G_TimeWarpTicker();
       C_Ticker();
+      G_StatTicker();
       break;
 
     case GS_INTERMISSION:
@@ -5250,4 +5253,147 @@ dboolean G_Check100pAchieved()
     }
 
     return false;
+}
+
+static dboolean collect_stats = false;
+static void G_StatTicker()
+{
+    static dboolean first = true;
+    static int ticks = 0;
+    static int tick_limit = -1;
+    static FILE* out = NULL;
+    static const char* headers[] = {
+        "episode",
+        "map",
+        "leveltime",
+        "health",
+        "armor",
+        "armor type",
+        "kills",
+        "items",
+        "secrets",
+        "bullets",
+        "shells",
+        "rockets",
+        "cells",
+        "blue key",
+        "yellow key",
+        "red key",
+        "blue skull",
+        "yellow skull",
+        "red skull",
+        "has invulnerability",
+        "has berserk",
+        "has invisibility",
+        "has radiation suit",
+        "has computer area map",
+        "has light amplification visor",
+        "has shotgun",
+        "has chaingun",
+        "has rocket launcher",
+        "has plasma rifle",
+        "has bfg",
+        "has chainsaw",
+        "has supershotgun",
+        "readyweapon",
+        "pendingweapon",
+        "attack down",
+        "refire",
+        "use down",
+        NULL
+    };
+    static const char* armorstrings[] = {
+        "None",
+        "Green",
+        "Blue",
+        NULL
+    };
+    static const char* weaponnames[] = {
+        "fist",
+        "pistol",
+        "shotgun",
+        "chaingun",
+        "rocket launcher",
+        "plasma rifle",
+        "bfg 9000",
+        "chainsaw",
+        "super shotgun",
+        "none",
+        "none",
+        NULL
+    };
+    player_t* p;
+    mobj_t* mo;
+    int collect = -1;
+    int i;
+
+    if (first) {
+        collect = M_CheckParm("-collectstats");
+        if (collect && (collect+1 < myargc)) {
+            out = M_fopen(myargv[collect+1], "w");
+        } else {
+            first = false;
+            collect_stats = false;
+            return;
+        }
+
+        if(!out) {
+            I_Error("Could not open stat file for writing.\n");
+            return;
+        }
+
+        first = false;
+        collect_stats = true;
+
+        for (i = 0; headers[i]; i++) {
+            fprintf(out, "%s,", headers[i]);
+        }
+        fprintf(out, "\n");
+    }
+
+    if (!collect_stats)
+        return;
+
+    if (tick_limit < 0) {
+        int st = M_CheckParm("-statseconds");
+        if (st && (st+1 < myargc)) {
+            tick_limit = MAX(1, atoi(myargv[st+1]));
+        } else {
+            tick_limit = 1;
+        }
+    }
+
+    if (ticks < TICRATE*tick_limit) {
+        ticks++;
+        return;
+    } else {
+        ticks = 0;
+    }
+
+    p = &players[consoleplayer];      
+    mo = p->mo; 
+
+    fprintf(out, "%d,", gameepisode);
+    fprintf(out, "%d,", gamemap);
+    fprintf(out, "%d,", leveltime);
+    fprintf(out, "%d,", mo->health);
+    fprintf(out, "%d,", p->armorpoints);
+    fprintf(out, "%s,", armorstrings[p->armortype]);
+    fprintf(out, "%d,", p->killcount);
+    fprintf(out, "%d,", p->itemcount);
+    fprintf(out, "%d,", p->secretcount);
+    for (i = 0; i < NUMAMMO; i++)
+        fprintf(out, "%d,", p->ammo[i]);
+    for (i = 0; i < NUMCARDS; i++)
+        fprintf(out, "%d,", p->cards[i]);
+    for (i = 0; i < NUMPOWERS; i++)
+        fprintf(out, "%d,", p->powers[i]);
+    for (i = 0; i < NUMWEAPONS-2; i++)
+        fprintf(out, "%d,", p->weaponowned[i]);
+    fprintf(out, "%s,", weaponnames[p->readyweapon]);
+    fprintf(out, "%s,", weaponnames[p->pendingweapon]);
+    fprintf(out, "%d,", p->attackdown);
+    fprintf(out, "%d,", p->refire);
+    fprintf(out, "%d,", p->usedown);
+    fprintf(out, "\n");
 }
