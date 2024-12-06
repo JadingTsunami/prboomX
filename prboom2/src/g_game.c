@@ -90,6 +90,7 @@
 #include "c_cvar.h"
 #include "i_sound.h"
 #include "c_cmd.h"
+#include "p_enemy.h"
 
 #include "m_io.h"
 
@@ -5272,16 +5273,18 @@ static void G_StatTicker()
         "kills",
         "items",
         "secrets",
+        "awake monsters",
         "bullets",
         "shells",
-        "rockets",
         "cells",
+        "rockets",
         "blue key",
         "yellow key",
         "red key",
         "blue skull",
         "yellow skull",
         "red skull",
+        "has backpack",
         "has invulnerability",
         "has berserk",
         "has invisibility",
@@ -5324,6 +5327,9 @@ static void G_StatTicker()
     };
     player_t* p;
     mobj_t* mo;
+    thinker_t* currentthinker = NULL;
+    mobj_t* actor;
+    int awake = 0;
     int collect = -1;
     int i;
 
@@ -5382,10 +5388,29 @@ static void G_StatTicker()
     fprintf(out, "%d,", p->killcount);
     fprintf(out, "%d,", p->itemcount);
     fprintf(out, "%d,", p->secretcount);
+
+    P_MapStart();
+    while ((currentthinker = P_NextThinker(currentthinker,th_all)) != NULL) {
+        if (currentthinker->function == P_MobjThinker &&
+                (((mobj_t *) currentthinker)->flags & MF_COUNTKILL ||
+                 ((mobj_t *) currentthinker)->type == MT_SKULL)) {
+            if (
+                    (((mobj_t *) currentthinker)->health > 0)
+                        &&
+                    !(((mobj_t *) currentthinker)->state->action == A_Look)
+               ) {
+                awake++;
+            }
+        }
+    }
+    P_MapEnd();
+
+    fprintf(out, "%d,", awake);
     for (i = 0; i < NUMAMMO; i++)
         fprintf(out, "%d,", p->ammo[i]);
     for (i = 0; i < NUMCARDS; i++)
         fprintf(out, "%d,", p->cards[i]);
+    fprintf(out, "%d,", p->backpack);
     for (i = 0; i < NUMPOWERS; i++)
         fprintf(out, "%d,", p->powers[i]);
     for (i = 0; i < NUMWEAPONS-2; i++)
