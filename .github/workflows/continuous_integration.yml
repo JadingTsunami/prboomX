@@ -104,7 +104,7 @@ jobs:
         cp config.h package
 
     - name: Upload Package
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         path: build/package
         name: ${{ matrix.config.package_name }}
