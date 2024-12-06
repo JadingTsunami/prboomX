@@ -5334,7 +5334,7 @@ static void G_StatTicker()
     int i;
 
     if (first) {
-        collect = M_CheckParm("-collectstats");
+        collect = M_CheckParm("-statfile");
         if (collect && (collect+1 < myargc)) {
             out = M_fopen(myargv[collect+1], "w");
         } else {
