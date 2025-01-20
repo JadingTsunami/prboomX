@@ -306,7 +306,8 @@ fixed_t sidemove_strafe50[2]  = {0x19, 0x32};
 // CPhipps - made lots of key/button state vars static
 //e6y static
 dboolean gamekeydown[NUMKEYS];
-static int     turnheld;       // for accelerative turning
+static int     turnheld;          // for accelerative turning
+int            keyboardangleturn; // angleturn contribution from keyboard on last cmd
 
 // Set to -1 or +1 to switch to the previous or next weapon.
 
@@ -334,8 +335,10 @@ static int mousearray[MAX_MOUSEB + 1];
 static int *mousebuttons = &mousearray[1];    // allow [-1]
 
 // mouse values are used once
-static int   mousex;
+int          mousex;
+int          mousex_remainder;
 static int   mousey;
+static int   mousey_remainder;
 static int   dclicktime;
 static int   dclickstate;
 static int   dclicks;
@@ -585,6 +588,8 @@ void G_BuildTiccmd(ticcmd_t* cmd)
       if (joyxmove < 0)
         cmd->angleturn += angleturn[tspeed];
     }
+    
+  keyboardangleturn = cmd->angleturn;
 
   if (gamekeydown[key_up])
     forward += forwardmove[speed];
@@ -952,8 +957,8 @@ static void G_DoLoadLevel (void)
   // clear cmd building stuff
   memset (gamekeydown, 0, sizeof(gamekeydown));
   joyxmove = joyymove = 0;
-  mousex = mousey = 0;
-  mlooky = 0;//e6y
+  mousex = mousex_remainder = mousey = mousey_remainder = 0;
+  mlooky = mlooky_remainder = 0;//e6y
   special_event = 0; paused = false;
   memset (&mousearray, 0, sizeof(mousearray));
   memset (&joyarray, 0, sizeof(joyarray));
@@ -976,6 +981,12 @@ static void G_DoLoadLevel (void)
     }
 }
 
+static void AccumulateMouse(int data, int sensitivity, int ratio, int *out, int *remainder)
+{
+  int total = *remainder + AccelerateMouse(data) * sensitivity;
+  *out += total / ratio;
+  *remainder = total % ratio;
+}
 
 //
 // G_Responder
@@ -1096,14 +1107,16 @@ dboolean G_Responder (event_t* ev)
       //e6y mousey += (ev->data3*(mouseSensitivity_vert))/10;  /*Mead rm *4 */
 
       //e6y
-      mousex += (AccelerateMouse(ev->data2)*(mouseSensitivity_horiz))/10;  /* killough */
+      AccumulateMouse(ev->data2, mouseSensitivity_horiz, MOUSEX_RATIO, &mousex, &mousex_remainder);
       if(GetMouseLook())
-        if (movement_mouseinvert)
-          mlooky += (AccelerateMouse(ev->data3)*(mouseSensitivity_mlook))/10;
-        else
-          mlooky -= (AccelerateMouse(ev->data3)*(mouseSensitivity_mlook))/10;
+      {
+        int y = movement_mouseinvert ? ev->data3 : -ev->data3;
+        AccumulateMouse(y, mouseSensitivity_mlook, MLOOKY_RATIO, &mlooky, &mlooky_remainder);
+      }
       else
-        mousey += (AccelerateMouse(ev->data3)*(mouseSensitivity_vert))/40;
+      {
+        AccumulateMouse(ev->data3, mouseSensitivity_vert, MOUSEY_RATIO, &mousey, &mousey_remainder);
+      }
 
       return true;    // eat events
 
@@ -4425,6 +4438,8 @@ void P_WalkTicker()
       if (joyxmove < 0)
         angturn += angleturn[tspeed];
     }
+    
+  walkcamera.keyboardangleturn = angturn;
 
   if (gamekeydown[key_up])
     forward += forwardmove[speed];
