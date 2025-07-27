@@ -978,10 +978,13 @@ void P_DamageMobj(mobj_t *target,mobj_t *inflictor, mobj_t *source, int damage)
   g_score_event_t score_event = SCORE_EVT_NONE;
   if (player) {
       score_event = SCORE_EVT_PLAYER_DAMAGED;
-  } else if (target->flags & MF_RESSURECTED) {
+  } else if (target->flags & MF_RESSURECTED || target->type == MT_SKULL) {
       score_event = SCORE_EVT_ZOMBIE_DAMAGED;
   } else if (target->flags & MF_COUNTKILL) {
-      score_event = SCORE_EVT_ENEMY_DAMAGED;
+      if (source && source->player)
+          score_event = SCORE_EVT_ENEMY_DAMAGED;
+      else
+          score_event = SCORE_EVT_ZOMBIE_DAMAGED;
   }
   if (score_event != SCORE_EVT_NONE)
       G_RegisterScoreEvent(score_event, MIN(damage, target->health));

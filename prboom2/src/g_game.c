@@ -975,6 +975,7 @@ static void G_DoLoadLevel (void)
           first=0;
         }
     }
+  G_ScoreReset();
 }
 
 
