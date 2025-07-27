@@ -90,6 +90,7 @@
 #include "c_cvar.h"
 #include "i_sound.h"
 #include "c_cmd.h"
+#include "g_score.h"
 
 #include "m_io.h"
 
@@ -1324,6 +1325,7 @@ void G_Ticker (void)
       HU_Ticker ();
       G_TimeWarpTicker();
       C_Ticker();
+      G_ScoreTicker();
       break;
 
     case GS_INTERMISSION:
