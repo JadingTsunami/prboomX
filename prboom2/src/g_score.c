@@ -9,6 +9,10 @@ static long long int streak_bonus = 0;
 static int streak_timeout = 0;
 static dboolean keep_score = false;
 
+/* temporary */
+static char scoremsg[256] = { 0 };
+static int scoretime = TICRATE;
+
 void G_ScoreTicker()
 {
     if(!keep_score) return;
@@ -19,10 +23,21 @@ void G_ScoreTicker()
         } else {
             G_RegisterScoreEvent(SCORE_EVT_STREAK_TIMEOUT, 0);
         }
-        doom_printf("Score: %lld (streak: %d)", global_playerscore, streak_timeout);
+        /* temporary */
+        doom_printf("Score: %lld (time left: %d)", global_playerscore, streak_timeout);
+        /* end temporary */
+        scoretime = TICRATE;
     } else {
+        /* temporary */
         doom_printf("Score: %lld", global_playerscore);
+        /* end temporary */
     }
+    /* temporary */
+    if (scoremsg[0] && scoretime > 0) {
+        doom_printf(scoremsg);
+        scoretime--;
+    }
+    /* end temporary */
 }
 
 void G_ScoreInit()
@@ -61,6 +76,11 @@ static void G_BreakStreak(dboolean keep_bonus)
     in_streak = false;
     if (keep_bonus)
         global_playerscore += G_CalculateStreak();
+
+    /* temporary */
+    sprintf(scoremsg, "STREAK %s! +%lld", keep_bonus ? "BONUS" : "BROKEN!", keep_bonus ? G_CalculateStreak() : 0);
+    /* end temporary */
+
     streak_bonus = 0;
 }
 
@@ -76,6 +96,9 @@ void G_RegisterScoreEvent(g_score_event_t event, int arg)
         case SCORE_EVT_ENEMY_DAMAGED:
             in_streak = true;
             streak_timeout = g_scorecfg[SCORE_CFG_TIMEOUT];
+            /* temporary */
+            if (scoretime > 0) scoremsg[0] = '\0';
+            /* end temporary */
             G_AccumulateStreak(arg);
             global_playerscore += arg;
             break;
