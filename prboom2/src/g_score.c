@@ -10,8 +10,36 @@ static int streak_timeout = 0;
 static dboolean keep_score = false;
 
 /* temporary */
-static char scoremsg[256] = { 0 };
+#define SCORE_MSG_SIZE (256)
+static char scoremsg[SCORE_MSG_SIZE] = { 0 };
 static int scoretime = TICRATE;
+
+static void G_Message(const char* msg, int duration)
+{
+    static unsigned int durleft = 0;
+    if (duration < 0) {
+        /* clear */
+        durleft = 0;
+        scoremsg[0] = '\0';
+        return;
+    }
+    if (duration == 0 && durleft > 0 && scoremsg[0]) {
+        doom_printf(scoremsg);
+        durleft--;
+    } else if (msg) {
+        /* clip to 3 seconds max */
+        duration = MIN(duration, TICRATE*3);
+        durleft = duration;
+        strncpy(scoremsg, msg, SCORE_MSG_SIZE);
+        doom_printf(scoremsg);
+    } else {
+        /* no new message */
+        if (in_streak && streak_timeout > 0)
+            doom_printf("Score: %lld (time left: %d)", global_playerscore, streak_timeout);
+        else
+            doom_printf("Score: %lld", global_playerscore);
+    }
+}
 
 void G_ScoreTicker()
 {
@@ -23,21 +51,9 @@ void G_ScoreTicker()
         } else {
             G_RegisterScoreEvent(SCORE_EVT_STREAK_TIMEOUT, 0);
         }
-        /* temporary */
-        doom_printf("Score: %lld (time left: %d)", global_playerscore, streak_timeout);
-        /* end temporary */
         scoretime = TICRATE;
-    } else {
-        /* temporary */
-        doom_printf("Score: %lld", global_playerscore);
-        /* end temporary */
     }
-    /* temporary */
-    if (scoremsg[0] && scoretime > 0) {
-        doom_printf(scoremsg);
-        scoretime--;
-    }
-    /* end temporary */
+    G_Message(NULL, 0);
 }
 
 void G_ScoreInit()
@@ -54,6 +70,7 @@ void G_ScoreReset()
 {
     global_playerscore = 0;
     in_streak = false;
+    G_Message(NULL, -1);
 }
 
 int G_GetStreakTimeLeft()
@@ -78,7 +95,11 @@ static void G_BreakStreak(dboolean keep_bonus)
         global_playerscore += G_CalculateStreak();
 
     /* temporary */
-    sprintf(scoremsg, "STREAK %s! +%lld", keep_bonus ? "BONUS" : "BROKEN!", keep_bonus ? G_CalculateStreak() : 0);
+    {
+        char msg[SCORE_MSG_SIZE];
+        sprintf(msg,"STREAK %s! +%lld", keep_bonus ? "BONUS" : "BROKEN!", keep_bonus ? G_CalculateStreak() : 0);
+        G_Message(msg, TICRATE*2);
+    }
     /* end temporary */
 
     streak_bonus = 0;

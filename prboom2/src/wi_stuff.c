@@ -44,6 +44,7 @@
 #include "lprintf.h"  // jff 08/03/98 - declaration of lprintf
 #include "r_draw.h"
 #include "hu_stuff.h"
+#include "g_score.h"
 
 // Ty 03/17/98: flag that new par times have been loaded in d_deh
 extern dboolean deh_pars;
@@ -1919,6 +1920,11 @@ void WI_drawStats(void)
   V_DrawNamePatch(SP_STATSX, SP_STATSY+2*lh, FB, sp_secret, CR_DEFAULT, VPT_STRETCH);
   if (cnt_secret)
     WI_drawPercent(320 - SP_STATSX, SP_STATSY+2*lh, cnt_secret[0]);
+
+  /* jds: temporary */
+  V_DrawNamePatch(SP_STATSX, SP_STATSY+3*lh, FB, sucks, CR_DEFAULT, VPT_STRETCH);
+  WI_drawNum(320 - SP_STATSX, SP_STATSY+3*lh, (int)G_GetScore(), -1);
+  /* jds: end temporary */
 
   WI_drawTimeStats(cnt_time, cnt_total_time, cnt_par);
 }
