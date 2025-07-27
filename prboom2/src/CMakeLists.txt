@@ -178,6 +178,8 @@ set(COMMON_SRC
     c_cmd.c
     c_cvar.h
     c_cvar.c
+    g_score.h
+    g_score.c
     zip/zip.h
     zip/zip.c
 )

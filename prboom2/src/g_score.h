@@ -26,6 +26,7 @@
 typedef enum {
     SCORE_EVT_NONE = 0,
     SCORE_EVT_ENEMY_DAMAGED,
+    SCORE_EVT_ZOMBIE_DAMAGED,
     SCORE_EVT_PLAYER_DAMAGED,
     SCORE_EVT_ITEM_GOT,
     SCORE_EVT_SECRET_FOUND,
@@ -47,7 +48,7 @@ void G_ScoreReset();
 
 long long int G_GetScore();
 int G_GetStreakTimeLeft();
-void G_RegisterEvent(g_score_event_t event, int arg);
+void G_RegisterScoreEvent(g_score_event_t event, int arg);
 
 static long long int global_playerscore = 0;
 static dboolean in_streak = false;

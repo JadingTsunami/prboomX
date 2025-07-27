@@ -62,6 +62,7 @@
 #include "lprintf.h"
 #include "e6y.h"//e6y
 #include "c_cvar.h"
+#include "g_score.h"
 
 //
 //      source animation definition
@@ -2373,6 +2374,7 @@ void P_PlayerInSpecialSector (player_t* player)
       case 9:
         // Tally player in secret sector, clear secret special
         player->secretcount++;
+        G_RegisterScoreEvent(SCORE_EVT_SECRET_FOUND, 0);
         sector->special = 0;
         if (hudadd_announce_100p_secrets || C_CvarIsSet("announce_100p_max")) {
             unsigned int i;
@@ -2448,6 +2450,7 @@ void P_PlayerInSpecialSector (player_t* player)
     {
         dboolean allsecrets = false;
         player->secretcount++;
+        G_RegisterScoreEvent(SCORE_EVT_SECRET_FOUND, 0);
         sector->special &= ~SECRET_MASK;
         if (sector->special<32) // if all extended bits clear,
             sector->special=0;    // sector is not special anymore

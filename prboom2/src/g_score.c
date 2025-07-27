@@ -2,18 +2,26 @@
 #include "doomdef.h"
 #include "lprintf.h"
 #include "math.h"
+#include "g_game.h"
+#include "doomstat.h"
 
 static long long int streak_bonus = 0;
 static int streak_timeout = 0;
+static dboolean keep_score = false;
 
 void G_ScoreTicker()
 {
-    if (in_streak) {
+    if(!keep_score) return;
+
+    if (in_streak && !paused && !menuactive) {
         if (streak_timeout > 0) {
             streak_timeout--;
         } else {
-            G_RegisterEvent(SCORE_EVT_STREAK_TIMEOUT, 0);
+            G_RegisterScoreEvent(SCORE_EVT_STREAK_TIMEOUT, 0);
         }
+        doom_printf("Score: %lld (streak: %d)", global_playerscore, streak_timeout);
+    } else {
+        doom_printf("Score: %lld", global_playerscore);
     }
 }
 
@@ -24,12 +32,13 @@ void G_ScoreInit()
     dboolean in_streak = false;
     g_scorecfg[SCORE_CFG_TIMEOUT] = 3*TICRATE;
     g_scorecfg[SCORE_CFG_MIN_BREAK] = 1*TICRATE;
+    keep_score = true;
 }
 
 void G_ScoreReset()
 {
-    long long int global_playerscore = 0;
-    dboolean in_streak = false;
+    global_playerscore = 0;
+    in_streak = false;
 }
 
 int G_GetStreakTimeLeft()
@@ -60,14 +69,13 @@ static void G_AccumulateStreak(int adder)
     streak_bonus += adder;
 }
 
-void G_RegisterEvent(g_score_event_t event, int arg)
+void G_RegisterScoreEvent(g_score_event_t event, int arg)
 {
+    if(!keep_score) return;
     switch(event) {
         case SCORE_EVT_ENEMY_DAMAGED:
-            if (!in_streak) {
-                in_streak = true;
-                streak_timeout = g_scorecfg[SCORE_CFG_TIMEOUT];
-            }
+            in_streak = true;
+            streak_timeout = g_scorecfg[SCORE_CFG_TIMEOUT];
             G_AccumulateStreak(arg);
             global_playerscore += arg;
             break;
@@ -76,6 +84,7 @@ void G_RegisterEvent(g_score_event_t event, int arg)
             break;
         case SCORE_EVT_ITEM_GOT:
         case SCORE_EVT_SECRET_FOUND:
+        case SCORE_EVT_ZOMBIE_DAMAGED:
             streak_timeout = g_scorecfg[SCORE_CFG_TIMEOUT];
             break;
         case SCORE_EVT_STREAK_TIMEOUT:

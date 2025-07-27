@@ -45,6 +45,7 @@
 #include "hu_stuff.h"
 #include "i_sound.h"
 #include "g_game.h"
+#include "g_score.h"
 
 #include "p_inter.h"
 #include "p_enemy.h"
@@ -653,6 +654,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher)
   }
   P_RemoveMobj (special);
   player->bonuscount += BONUSADD;
+  G_RegisterScoreEvent(SCORE_EVT_ITEM_GOT, 0);
 
   CheckThingsPickupTracer(special);//e6y
 
@@ -971,6 +973,18 @@ void P_DamageMobj(mobj_t *target,mobj_t *inflictor, mobj_t *source, int damage)
   {
     CheckGivenDamageTracer(source, damage);
   }
+
+  /* Just before doing the damage, register impact on score */
+  g_score_event_t score_event = SCORE_EVT_NONE;
+  if (player) {
+      score_event = SCORE_EVT_PLAYER_DAMAGED;
+  } else if (target->flags & MF_RESSURECTED) {
+      score_event = SCORE_EVT_ZOMBIE_DAMAGED;
+  } else if (target->flags & MF_COUNTKILL) {
+      score_event = SCORE_EVT_ENEMY_DAMAGED;
+  }
+  if (score_event != SCORE_EVT_NONE)
+      G_RegisterScoreEvent(score_event, MIN(damage, target->health));
 
   // do the damage
   target->health -= damage;

@@ -89,6 +89,7 @@
 #include "zip/zip.h"
 #include "md5.h"
 #include "c_cmd.h"
+#include "g_score.h"
 
 //e6y
 #include "r_demo.h"
@@ -2419,6 +2420,9 @@ static void D_DoomMainSetup(void)
           G_TimeWarpLoadTimelineAsFile(G_TimeWarpGenerateFilename(), false);
       I_AtExit(G_AutoSaveTimeWarpTimelineOnExit, false);
   }
+
+  if (!netgame)
+      G_ScoreInit();
 }
 
 //

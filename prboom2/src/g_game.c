@@ -1892,6 +1892,8 @@ void G_WorldDone (void)
 {
   gameaction = ga_worlddone;
 
+  G_RegisterScoreEvent(SCORE_EVT_LEVEL_DONE, 0);
+
   if (secretexit)
     players[consoleplayer].didsecret = true;
 
@@ -2045,6 +2047,7 @@ void G_LoadGame(int slot, dboolean command)
   }
   command_loadgame = command;
   R_SmoothPlaying_Reset(NULL); // e6y
+  G_ScoreReset();
 }
 
 // killough 5/15/98:
@@ -2892,6 +2895,7 @@ void G_DoNewGame (void)
   // e6y: allow new level's music to be loaded
   idmusnum = -1;
 
+  G_ScoreReset();
   G_ReloadDefaults();            // killough 3/1/98
   netgame = solo_net;
   deathmatch = false;
@@ -4616,6 +4620,8 @@ static void G_DoLoadTimeWarp(int position)
   int savegame_compatibility = -1;
   //e6y: numeric version number of package should be zero before initializing from savegame
   unsigned int packageversion = 0;
+
+  G_ScoreReset();
 
   // [crispy] loaded game must always be single player.
   // Needed for ability to use a further game loading, as well as
