@@ -63,6 +63,8 @@ void G_ScoreInit()
     dboolean in_streak = false;
     g_scorecfg[SCORE_CFG_TIMEOUT] = 3*TICRATE;
     g_scorecfg[SCORE_CFG_MIN_BREAK] = 1*TICRATE;
+    g_scorecfg[SCORE_CFG_SECRET_POINTS] = 1000;
+    g_scorecfg[SCORE_CFG_SECRET_STREAK_EXTENSION] = 15*TICRATE;
     keep_score = true;
 }
 
@@ -126,8 +128,11 @@ void G_RegisterScoreEvent(g_score_event_t event, int arg)
         case SCORE_EVT_PLAYER_DAMAGED:
             G_BreakStreak(streak_timeout <= g_scorecfg[SCORE_CFG_MIN_BREAK]);
             break;
-        case SCORE_EVT_ITEM_GOT:
         case SCORE_EVT_SECRET_FOUND:
+            streak_timeout = g_scorecfg[SCORE_CFG_SECRET_STREAK_EXTENSION];
+            global_playerscore += g_scorecfg[SCORE_CFG_SECRET_POINTS];
+            break;
+        case SCORE_EVT_ITEM_GOT:
         case SCORE_EVT_ZOMBIE_DAMAGED:
             streak_timeout = g_scorecfg[SCORE_CFG_TIMEOUT];
             break;
