@@ -456,77 +456,77 @@ endif()
 
 
 # PrBoomX macOS launcher
-
-if(APPLE)
-    set(LAUNCHER_SOURCES
-        MAC/ANSIString.m
-        MAC/ConsoleController.h
-        MAC/ConsoleController.m
-        MAC/DrawerButton.h
-        MAC/DrawerButton.m
-        MAC/FileButtonController.h
-        MAC/FileButtonController.m
-        MAC/LauncherApp.h
-        MAC/LauncherApp.m
-        MAC/LauncherMain.m
-        MAC/ResolutionDataSource.h
-        MAC/ResolutionDataSource.m
-        MAC/UKFileWatcher.h
-        MAC/UKKQueue.h
-        MAC/UKKQueue.m
-        MAC/UKMainThreadProxy.h
-        MAC/UKMainThreadProxy.m
-        MAC/WadViewController.h
-        MAC/WadViewController.m
-    )
-
-    set(LAUNCHER_RESOURCES
-        MAC/Launcher.icns
-        MAC/PrBoom.icns
-        MAC/PrBoom.sdef
-    )
-    set_source_files_properties(${LAUNCHER_RESOURCES} PROPERTIES
-        MACOSX_PACKAGE_LOCATION Resources
-    )
-
-    set(LAUNCHER_MAINMENU_RESOURCES
-        MAC/English.lproj/MainMenu.nib/classes.nib
-        MAC/English.lproj/MainMenu.nib/info.nib
-        MAC/English.lproj/MainMenu.nib/keyedobjects.nib
-    )
-    set_source_files_properties(${LAUNCHER_MAINMENU_RESOURCES} PROPERTIES
-        MACOSX_PACKAGE_LOCATION Resources/English.lproj/MainMenu.nib
-    )
-
-    add_executable(prboomX-launcher MACOSX_BUNDLE
-        ${LAUNCHER_SOURCES}
-        ${LAUNCHER_RESOURCES}
-        ${LAUNCHER_MAINMENU_RESOURCES}
-    )
-    target_include_directories(prboomX-launcher PRIVATE
-        ${CMAKE_BINARY_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}
-    )
-    set_target_properties(prboomX-launcher PROPERTIES
-        LINK_FLAGS "-framework Cocoa"
-        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/MAC/Info.plist"
-        OUTPUT_NAME "Launcher"
-        RUNTIME_OUTPUT_DIRECTORY ${PRBOOM_OUTPUT_PATH}
-        XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
-    )
-    add_dependencies(prboomX-launcher prboomX)
-
-    set(BUNDLE_GAME_EXECUTABLE prboomX)
-
-    add_custom_command(TARGET prboomX-launcher POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:${BUNDLE_GAME_EXECUTABLE}> $<TARGET_FILE_DIR:prboomX-launcher>/PrBoomX
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${WAD_DATA_PATH} $<TARGET_FILE_DIR:prboomX-launcher>
-    )
-
-    if(BUILD_SERVER AND SDL2_NET_FOUND)
-        add_dependencies(prboomX-launcher prboomX-game-server)
-        add_custom_command(TARGET prboomX-launcher POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:prboomX-game-server> $<TARGET_FILE_DIR:prboomX-launcher>
-        )
-    endif()
-endif()
+# Deprecated
+#if(APPLE)
+#    set(LAUNCHER_SOURCES
+#        MAC/ANSIString.m
+#        MAC/ConsoleController.h
+#        MAC/ConsoleController.m
+#        MAC/DrawerButton.h
+#        MAC/DrawerButton.m
+#        MAC/FileButtonController.h
+#        MAC/FileButtonController.m
+#        MAC/LauncherApp.h
+#        MAC/LauncherApp.m
+#        MAC/LauncherMain.m
+#        MAC/ResolutionDataSource.h
+#        MAC/ResolutionDataSource.m
+#        MAC/UKFileWatcher.h
+#        MAC/UKKQueue.h
+#        MAC/UKKQueue.m
+#        MAC/UKMainThreadProxy.h
+#        MAC/UKMainThreadProxy.m
+#        MAC/WadViewController.h
+#        MAC/WadViewController.m
+#    )
+#
+#    set(LAUNCHER_RESOURCES
+#        MAC/Launcher.icns
+#        MAC/PrBoom.icns
+#        MAC/PrBoom.sdef
+#    )
+#    set_source_files_properties(${LAUNCHER_RESOURCES} PROPERTIES
+#        MACOSX_PACKAGE_LOCATION Resources
+#    )
+#
+#    set(LAUNCHER_MAINMENU_RESOURCES
+#        MAC/English.lproj/MainMenu.nib/classes.nib
+#        MAC/English.lproj/MainMenu.nib/info.nib
+#        MAC/English.lproj/MainMenu.nib/keyedobjects.nib
+#    )
+#    set_source_files_properties(${LAUNCHER_MAINMENU_RESOURCES} PROPERTIES
+#        MACOSX_PACKAGE_LOCATION Resources/English.lproj/MainMenu.nib
+#    )
+#
+#    add_executable(prboomX-launcher MACOSX_BUNDLE
+#        ${LAUNCHER_SOURCES}
+#        ${LAUNCHER_RESOURCES}
+#        ${LAUNCHER_MAINMENU_RESOURCES}
+#    )
+#    target_include_directories(prboomX-launcher PRIVATE
+#        ${CMAKE_BINARY_DIR}
+#        ${CMAKE_CURRENT_SOURCE_DIR}
+#    )
+#    set_target_properties(prboomX-launcher PROPERTIES
+#        LINK_FLAGS "-framework Cocoa"
+#        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/MAC/Info.plist"
+#        OUTPUT_NAME "Launcher"
+#        RUNTIME_OUTPUT_DIRECTORY ${PRBOOM_OUTPUT_PATH}
+#        XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
+#    )
+#    add_dependencies(prboomX-launcher prboomX)
+#
+#    set(BUNDLE_GAME_EXECUTABLE prboomX)
+#
+#    add_custom_command(TARGET prboomX-launcher POST_BUILD
+#        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:${BUNDLE_GAME_EXECUTABLE}> $<TARGET_FILE_DIR:prboomX-launcher>/PrBoomX
+#        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${WAD_DATA_PATH} $<TARGET_FILE_DIR:prboomX-launcher>
+#    )
+#
+#    if(BUILD_SERVER AND SDL2_NET_FOUND)
+#        add_dependencies(prboomX-launcher prboomX-game-server)
+#        add_custom_command(TARGET prboomX-launcher POST_BUILD
+#            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:prboomX-game-server> $<TARGET_FILE_DIR:prboomX-launcher>
+#        )
+#    endif()
+#endif()
