@@ -23,6 +23,8 @@
 
 #include "doomtype.h"
 
+#define SCORE_MSG_SIZE (256)
+
 typedef enum {
     SCORE_EVT_NONE = 0,
     SCORE_EVT_ENEMY_DAMAGED,
@@ -48,9 +50,12 @@ void G_ScoreTicker();
 void G_ScoreInit();
 void G_ScoreReset();
 
+dboolean G_ShouldKeepScore();
 long long int G_GetScore();
 int G_GetStreakTimeLeft();
 void G_RegisterScoreEvent(g_score_event_t event, int arg);
+const char* G_GetScoreMessage();
+int G_GetScoreColor();
 
 static long long int global_playerscore = 0;
 static dboolean in_streak = false;

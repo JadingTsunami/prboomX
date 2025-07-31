@@ -4,15 +4,19 @@
 #include "math.h"
 #include "g_game.h"
 #include "doomstat.h"
+#include "v_video.h"
 
 static long long int streak_bonus = 0;
 static int streak_timeout = 0;
 static dboolean keep_score = false;
 
-/* temporary */
-#define SCORE_MSG_SIZE (256)
 static char scoremsg[SCORE_MSG_SIZE] = { 0 };
 static int scoretime = TICRATE;
+
+dboolean G_ShouldKeepScore()
+{
+    return keep_score;
+}
 
 static void G_Message(const char* msg, int duration)
 {
@@ -24,21 +28,51 @@ static void G_Message(const char* msg, int duration)
         return;
     }
     if (duration == 0 && durleft > 0 && scoremsg[0]) {
-        doom_printf(scoremsg);
         durleft--;
     } else if (msg) {
         /* clip to 3 seconds max */
         duration = MIN(duration, TICRATE*3);
         durleft = duration;
         strncpy(scoremsg, msg, SCORE_MSG_SIZE);
-        doom_printf(scoremsg);
     } else {
         /* no new message */
         if (in_streak && streak_timeout > 0)
-            doom_printf("Score: %lld (time left: %d)", global_playerscore, streak_timeout);
+            snprintf(scoremsg, SCORE_MSG_SIZE, "Score: %lld (time left: %d)", global_playerscore, streak_timeout);
         else
-            doom_printf("Score: %lld", global_playerscore);
+            snprintf(scoremsg, SCORE_MSG_SIZE, "Score: %lld", global_playerscore);
     }
+}
+
+const char* G_GetScoreMessage()
+{
+    return scoremsg;
+}
+
+int G_GetScoreColor()
+{
+    /* todo: move to config variables */
+    static int score_color_map[CR_LIMIT][2] = {
+        {0, CR_WHITE},
+        {250, CR_BRICK},
+        {500, CR_TAN},
+        {1000, CR_GRAY},
+        {2500, CR_GREEN},
+        {5000, CR_BROWN},
+        {10000, CR_GOLD},
+        {20000, CR_RED},
+        {50000, CR_BLUE},
+        {75000, CR_ORANGE},
+        {100000, CR_BLUE2},
+        {250000, CR_YELLOW},
+        {1000000, CR_PURPLE},
+        {-1, CR_LIMIT}
+    };
+
+    for (int i = 0; i < CR_LIMIT; i++) {
+        if (score_color_map[i][0] > 0 && streak_bonus < score_color_map[i][0])
+            return score_color_map[i][1];
+    }
+    return score_color_map[CR_LIMIT-1][1];
 }
 
 void G_ScoreTicker()
@@ -96,13 +130,11 @@ static void G_BreakStreak(dboolean keep_bonus)
     if (keep_bonus)
         global_playerscore += G_CalculateStreak();
 
-    /* temporary */
     {
         char msg[SCORE_MSG_SIZE];
         sprintf(msg,"STREAK %s! +%lld", keep_bonus ? "BONUS" : "BROKEN!", keep_bonus ? G_CalculateStreak() : 0);
         G_Message(msg, TICRATE*2);
     }
-    /* end temporary */
 
     streak_bonus = 0;
 }

@@ -56,6 +56,7 @@
 #include "m_cheat.h"
 #include "c_cmd.h"
 #include "c_cvar.h"
+#include "g_score.h"
 
 // global heads up display controls
 
@@ -81,6 +82,9 @@ int hud_num;
 
 #define HU_FPSX (320 - 8*hu_font2['A'-HU_FONTSTART].width)
 #define HU_FPSY (1 * hu_font['A'-HU_FONTSTART].height + 1)
+
+#define HU_SCOREX (0)
+#define HU_SCOREY (1 * hu_font['A'-HU_FONTSTART].height + 1)
 
 //jff 2/16/98 add coord text widget coordinates
 // proff - changed to SCREENWIDTH to 320 for stretching
@@ -171,6 +175,7 @@ static hu_textline_t  w_keys;   //jff 2/16/98 new keys widget for hud
 static hu_textline_t  w_gkeys;  //jff 3/7/98 graphic keys widget for hud
 static hu_textline_t  w_monsec; //jff 2/16/98 new kill/secret widget for hud
 static hu_textline_t  w_hudfps; //jds hud fps widget
+static hu_textline_t  w_hudscore; //jds hud score widget
 static hu_mtext_t     w_rtext;  //jff 2/26/98 text message refresh widget
 static hu_mtext_t     w_consoletext;  //jds console message widget
 
@@ -692,6 +697,16 @@ void HU_Start(void)
 
   HUlib_initTextLine
   (
+    &w_hudscore,
+    0, 0,
+    hu_font,
+    HU_FONTSTART,
+    CR_WHITE,
+    VPT_NONE
+  );
+
+  HUlib_initTextLine
+  (
     &w_medict_percent,
     0, 0,
     hu_font_hud,
@@ -1100,9 +1115,11 @@ void HU_widget_draw_weapon(void);
 void HU_widget_build_keys(void);
 void HU_widget_draw_keys(void);
 void HU_widget_build_fps(void);
+void HU_widget_build_score(void);
 void HU_widget_build_monsec(void);
 void HU_widget_draw_monsec(void);
 void HU_widget_draw_fps(void);
+void HU_widget_draw_score(void);
 void HU_widget_build_health(void);
 void HU_widget_draw_health(void);
 void HU_widget_build_armor(void);
@@ -1154,14 +1171,15 @@ static inline dboolean drawTimeSTSwidgets (void)
 
 static hud_widget_t hud_name_widget[] =
 {
-  {&w_ammo,   0, 0, 0, HU_widget_build_ammo,   HU_widget_draw_ammo,   "ammo"},
-  {&w_weapon, 0, 0, 0, HU_widget_build_weapon, HU_widget_draw_weapon, "weapon"},
-  {&w_keys,   0, 0, 0, HU_widget_build_keys,   HU_widget_draw_keys,   "keys"},
-  {&w_monsec, 0, 0, 0, HU_widget_build_monsec, HU_widget_draw_monsec, "monsec"},
-  {&w_health, 0, 0, 0, HU_widget_build_health, HU_widget_draw_health, "health"},
-  {&w_armor,  0, 0, 0, HU_widget_build_armor,  HU_widget_draw_armor,  "armor"},
-  {&w_hudadd, 0, 0, 0, HU_widget_build_hudadd, HU_widget_draw_hudadd, "hudadd"},
-  {&w_hudfps, 0, 0, 0, HU_widget_build_fps,    HU_widget_draw_fps,    "fps"},
+  {&w_ammo,     0, 0, 0, HU_widget_build_ammo,   HU_widget_draw_ammo,   "ammo"},
+  {&w_weapon,   0, 0, 0, HU_widget_build_weapon, HU_widget_draw_weapon, "weapon"},
+  {&w_keys,     0, 0, 0, HU_widget_build_keys,   HU_widget_draw_keys,   "keys"},
+  {&w_monsec,   0, 0, 0, HU_widget_build_monsec, HU_widget_draw_monsec, "monsec"},
+  {&w_health,   0, 0, 0, HU_widget_build_health, HU_widget_draw_health, "health"},
+  {&w_armor,    0, 0, 0, HU_widget_build_armor,  HU_widget_draw_armor,  "armor"},
+  {&w_hudadd,   0, 0, 0, HU_widget_build_hudadd, HU_widget_draw_hudadd, "hudadd"},
+  {&w_hudfps,   0, 0, 0, HU_widget_build_fps,    HU_widget_draw_fps,    "fps"},
+  {&w_hudscore, 0, 0, 0, HU_widget_build_score,  HU_widget_draw_score,  "fps"},
 
   {&w_keys_icon, 0, 0, 0, HU_widget_build_gkeys, HU_widget_draw_gkeys, "gkeys"},
 
@@ -1320,6 +1338,10 @@ void HU_MoveHud(int force)
       w_hudfps.x = HU_FPSX;
       w_hudfps.y = HU_FPSY;
       w_hudfps.flags = VPT_ALIGN_RIGHT_TOP;
+
+      w_hudscore.x = HU_SCOREX;
+      w_hudscore.y = HU_SCOREY;
+      w_hudscore.flags = VPT_ALIGN_RIGHT_TOP;
 
       ohud_num = -2;
     }
@@ -2105,6 +2127,24 @@ void HU_widget_build_monsec(void)
     HUlib_addCharToTextLine(&w_monsec, *(s++));
 }
 
+void HU_widget_build_score(void)
+{
+    char* s;
+    char* s_start;
+    if (!G_ShouldKeepScore())
+        return;
+
+    s = malloc(sizeof(char)*SCORE_MSG_SIZE);
+    s_start = s;
+    s[0] = '\0';
+    snprintf(s, SCORE_MSG_SIZE, G_GetScoreMessage());
+    HUlib_clearTextLine(&w_hudscore);
+    w_hudscore.cm = G_GetScoreColor();
+    while (*s)
+        HUlib_addCharToTextLine(&w_hudscore, *(s++));
+    free(s_start);
+}
+
 void HU_widget_build_fps(void)
 {
   extern int renderer_fps;
@@ -2166,6 +2206,13 @@ void HU_widget_draw_hudadd(void)
   if (hudadd_gamespeed || hudadd_leveltime)
   {
     HUlib_drawTextLine(&w_hudadd, false);
+  }
+}
+
+void HU_widget_draw_score(void)
+{
+  if (G_ShouldKeepScore()) {
+    HUlib_drawTextLine(&w_hudscore, false);
   }
 }
 
@@ -2677,6 +2724,10 @@ void HU_Drawer(void)
   if (realframe)
       HU_widget_build_fps();
   HU_widget_draw_fps();
+
+  HU_widget_build_score();
+  HU_widget_draw_score();
+
   //jff 3/4/98 display last to give priority
   HU_Erase(); // jff 4/24/98 Erase current lines before drawing current
               // needed when screen not fullsize
