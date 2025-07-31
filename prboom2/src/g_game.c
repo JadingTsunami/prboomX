@@ -1676,6 +1676,8 @@ void G_DoCompleted (void)
 
   gameaction = ga_nothing;
 
+  G_RegisterScoreEvent(SCORE_EVT_LEVEL_DONE, 0);
+
   for (i=0; i<MAXPLAYERS; i++)
     if (playeringame[i])
       G_PlayerFinishLevel(i);        // take away cards and stuff
@@ -1892,8 +1894,6 @@ frommapinfo:
 void G_WorldDone (void)
 {
   gameaction = ga_worlddone;
-
-  G_RegisterScoreEvent(SCORE_EVT_LEVEL_DONE, 0);
 
   if (secretexit)
     players[consoleplayer].didsecret = true;
