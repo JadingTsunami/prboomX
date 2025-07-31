@@ -37,7 +37,7 @@ static void G_Message(const char* msg, int duration)
     } else {
         /* no new message */
         if (in_streak && streak_timeout > 0)
-            snprintf(scoremsg, SCORE_MSG_SIZE, "Score: %lld (time left: %d)", global_playerscore, streak_timeout);
+            snprintf(scoremsg, SCORE_MSG_SIZE, "Score: %lld (Damage Streak!)", global_playerscore);
         else
             snprintf(scoremsg, SCORE_MSG_SIZE, "Score: %lld", global_playerscore);
     }
@@ -51,28 +51,36 @@ const char* G_GetScoreMessage()
 int G_GetScoreColor()
 {
     /* todo: move to config variables */
-    static int score_color_map[CR_LIMIT][2] = {
-        {0, CR_WHITE},
+#define SCORE_TIERS (12)
+    static int score_color_map[SCORE_TIERS+1][2] = {
         {250, CR_BRICK},
         {500, CR_TAN},
-        {1000, CR_GRAY},
+        {1000, CR_BLUE2},
         {2500, CR_GREEN},
         {5000, CR_BROWN},
         {10000, CR_GOLD},
         {20000, CR_RED},
         {50000, CR_BLUE},
-        {75000, CR_ORANGE},
-        {100000, CR_BLUE2},
+        {100000, CR_ORANGE},
         {250000, CR_YELLOW},
-        {1000000, CR_PURPLE},
+        {500000, CR_PURPLE},
+        {1000000, CR_WHITE},
         {-1, CR_LIMIT}
     };
 
-    for (int i = 0; i < CR_LIMIT; i++) {
-        if (score_color_map[i][0] > 0 && streak_bonus < score_color_map[i][0])
-            return score_color_map[i][1];
+    if (in_streak) {
+        if (streak_timeout < g_scorecfg[SCORE_CFG_MIN_BREAK]) {
+            return CR_GRAY;
+        }
+
+        for (int i = 0; score_color_map[i][0] > 0; i++) {
+            if (streak_bonus < score_color_map[i][0])
+                return score_color_map[i][1];
+        }
+        return score_color_map[SCORE_TIERS-1][1];
+    } else {
+        return CR_BRICK;
     }
-    return score_color_map[CR_LIMIT-1][1];
 }
 
 void G_ScoreTicker()
