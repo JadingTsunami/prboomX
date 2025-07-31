@@ -150,7 +150,7 @@ void G_RegisterScoreEvent(g_score_event_t event, int arg)
     switch(event) {
         case SCORE_EVT_ENEMY_DAMAGED:
             in_streak = true;
-            streak_timeout = g_scorecfg[SCORE_CFG_TIMEOUT];
+            streak_timeout = MAX(streak_timeout, g_scorecfg[SCORE_CFG_TIMEOUT]);
             /* temporary */
             if (scoretime > 0) scoremsg[0] = '\0';
             /* end temporary */
@@ -161,12 +161,13 @@ void G_RegisterScoreEvent(g_score_event_t event, int arg)
             G_BreakStreak(streak_timeout <= g_scorecfg[SCORE_CFG_MIN_BREAK]);
             break;
         case SCORE_EVT_SECRET_FOUND:
-            streak_timeout = g_scorecfg[SCORE_CFG_SECRET_STREAK_EXTENSION];
+            in_streak = true;
+            streak_timeout = MAX(streak_timeout, g_scorecfg[SCORE_CFG_SECRET_STREAK_EXTENSION]);
             global_playerscore += g_scorecfg[SCORE_CFG_SECRET_POINTS];
             break;
         case SCORE_EVT_ITEM_GOT:
         case SCORE_EVT_ZOMBIE_DAMAGED:
-            streak_timeout = g_scorecfg[SCORE_CFG_TIMEOUT];
+            streak_timeout = MAX(streak_timeout, g_scorecfg[SCORE_CFG_TIMEOUT]);
             break;
         case SCORE_EVT_STREAK_TIMEOUT:
         case SCORE_EVT_LEVEL_DONE:
