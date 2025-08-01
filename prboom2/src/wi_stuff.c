@@ -1925,7 +1925,7 @@ void WI_drawStats(void)
   V_DrawNamePatch(SP_STATSX, SP_STATSY+3*lh, FB, sucks, CR_DEFAULT, VPT_STRETCH);
   WI_drawNum(320 - SP_STATSX, SP_STATSY+3*lh, (int)G_GetLevelScore(), -1);
 
-  V_DrawNamePatch(SP_STATSX, SP_STATSY+4*lh, FB, sucks, CR_DEFAULT, VPT_STRETCH);
+  V_DrawNamePatch(SP_STATSX, SP_STATSY+4*lh, FB, total, CR_DEFAULT, VPT_STRETCH);
   WI_drawNum(320 - SP_STATSX, SP_STATSY+4*lh, (int)G_GetTotalScore(), -1);
   /* jds: end temporary */
 
