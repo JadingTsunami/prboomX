@@ -975,7 +975,7 @@ static void G_DoLoadLevel (void)
           first=0;
         }
     }
-  G_ScoreReset();
+  G_ScoreReset(false);
 }
 
 
@@ -1676,8 +1676,6 @@ void G_DoCompleted (void)
 
   gameaction = ga_nothing;
 
-  G_RegisterScoreEvent(SCORE_EVT_LEVEL_DONE, 0);
-
   for (i=0; i<MAXPLAYERS; i++)
     if (playeringame[i])
       G_PlayerFinishLevel(i);        // take away cards and stuff
@@ -1884,6 +1882,8 @@ frommapinfo:
     StatCopy(&wminfo);
   }
 
+  G_RegisterScoreEvent(SCORE_EVT_LEVEL_DONE, 0);
+
   WI_Start (&wminfo);
 }
 
@@ -2048,7 +2048,7 @@ void G_LoadGame(int slot, dboolean command)
   }
   command_loadgame = command;
   R_SmoothPlaying_Reset(NULL); // e6y
-  G_ScoreReset();
+  G_ScoreReset(true);
 }
 
 // killough 5/15/98:
@@ -2896,7 +2896,7 @@ void G_DoNewGame (void)
   // e6y: allow new level's music to be loaded
   idmusnum = -1;
 
-  G_ScoreReset();
+  G_ScoreReset(true);
   G_ReloadDefaults();            // killough 3/1/98
   netgame = solo_net;
   deathmatch = false;
@@ -3098,6 +3098,7 @@ void G_InitNew(skill_t skill, int episode, int map)
 
   totalleveltimes = 0; // cph
 
+  G_ScoreReset(true);
   G_SkipDemoStartCheck();
 
   //jff 4/16/98 force marks on automap cleared every new level start
@@ -4622,7 +4623,7 @@ static void G_DoLoadTimeWarp(int position)
   //e6y: numeric version number of package should be zero before initializing from savegame
   unsigned int packageversion = 0;
 
-  G_ScoreReset();
+  G_ScoreReset(true);
 
   // [crispy] loaded game must always be single player.
   // Needed for ability to use a further game loading, as well as

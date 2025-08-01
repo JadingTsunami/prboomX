@@ -1923,7 +1923,10 @@ void WI_drawStats(void)
 
   /* jds: temporary */
   V_DrawNamePatch(SP_STATSX, SP_STATSY+3*lh, FB, sucks, CR_DEFAULT, VPT_STRETCH);
-  WI_drawNum(320 - SP_STATSX, SP_STATSY+3*lh, (int)G_GetScore(), -1);
+  WI_drawNum(320 - SP_STATSX, SP_STATSY+3*lh, (int)G_GetLevelScore(), -1);
+
+  V_DrawNamePatch(SP_STATSX, SP_STATSY+4*lh, FB, sucks, CR_DEFAULT, VPT_STRETCH);
+  WI_drawNum(320 - SP_STATSX, SP_STATSY+4*lh, (int)G_GetTotalScore(), -1);
   /* jds: end temporary */
 
   WI_drawTimeStats(cnt_time, cnt_total_time, cnt_par);

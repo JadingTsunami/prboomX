@@ -48,17 +48,14 @@ typedef enum {
 
 void G_ScoreTicker();
 void G_ScoreInit();
-void G_ScoreReset();
+void G_ScoreReset(dboolean clear_total);
 
 dboolean G_ShouldKeepScore();
-long long int G_GetScore();
+long long int G_GetLevelScore();
+long long int G_GetTotalScore();
 int G_GetStreakTimeLeft();
 void G_RegisterScoreEvent(g_score_event_t event, int arg);
 const char* G_GetScoreMessage();
 int G_GetScoreColor();
-
-static long long int global_playerscore = 0;
-static dboolean in_streak = false;
-static int g_scorecfg[SCORE_CFG_LAST] = { 0 };
 
 #endif

@@ -9,6 +9,10 @@
 static long long int streak_bonus = 0;
 static int streak_timeout = 0;
 static dboolean keep_score = false;
+static long long int total_playerscore = 0;
+static long long int level_playerscore = 0;
+static dboolean in_streak = false;
+static int g_scorecfg[SCORE_CFG_LAST] = { 0 };
 
 static char scoremsg[SCORE_MSG_SIZE] = { 0 };
 static int scoretime = TICRATE;
@@ -37,9 +41,9 @@ static void G_Message(const char* msg, int duration)
     } else {
         /* no new message */
         if (in_streak && streak_timeout > 0)
-            snprintf(scoremsg, SCORE_MSG_SIZE, "Score: %lld (Damage Streak!)", global_playerscore);
+            snprintf(scoremsg, SCORE_MSG_SIZE, "Score: %lld (Damage Streak!)", level_playerscore);
         else
-            snprintf(scoremsg, SCORE_MSG_SIZE, "Score: %lld", global_playerscore);
+            snprintf(scoremsg, SCORE_MSG_SIZE, "Score: %lld", level_playerscore);
     }
 }
 
@@ -101,8 +105,9 @@ void G_ScoreTicker()
 void G_ScoreInit()
 {
     /* TODO: Can load this externally later */
-    long long int global_playerscore = 0;
-    dboolean in_streak = false;
+    total_playerscore = 0;
+    level_playerscore = 0;
+    in_streak = false;
     g_scorecfg[SCORE_CFG_TIMEOUT] = 3*TICRATE;
     g_scorecfg[SCORE_CFG_MIN_BREAK] = 1*TICRATE;
     g_scorecfg[SCORE_CFG_SECRET_POINTS] = 1000;
@@ -110,9 +115,11 @@ void G_ScoreInit()
     keep_score = true;
 }
 
-void G_ScoreReset()
+void G_ScoreReset(dboolean clear_total)
 {
-    global_playerscore = 0;
+    if (clear_total)
+        total_playerscore = 0;
+    level_playerscore = 0;
     in_streak = false;
     G_Message(NULL, -1);
 }
@@ -122,9 +129,14 @@ int G_GetStreakTimeLeft()
     return streak_timeout;
 }
 
-long long int G_GetScore()
+long long int G_GetLevelScore()
 {
-    return global_playerscore;
+    return level_playerscore;
+}
+
+long long int G_GetTotalScore()
+{
+    return total_playerscore;
 }
 
 static long long int G_CalculateStreak()
@@ -136,7 +148,7 @@ static void G_BreakStreak(dboolean keep_bonus)
 {
     in_streak = false;
     if (keep_bonus)
-        global_playerscore += G_CalculateStreak();
+        level_playerscore += G_CalculateStreak();
 
     {
         char msg[SCORE_MSG_SIZE];
@@ -152,6 +164,11 @@ static void G_AccumulateStreak(int adder)
     streak_bonus += adder;
 }
 
+static void G_ScoreLevelDone()
+{
+    total_playerscore += level_playerscore;
+}
+
 void G_RegisterScoreEvent(g_score_event_t event, int arg)
 {
     if(!keep_score) return;
@@ -163,7 +180,7 @@ void G_RegisterScoreEvent(g_score_event_t event, int arg)
             if (scoretime > 0) scoremsg[0] = '\0';
             /* end temporary */
             G_AccumulateStreak(arg);
-            global_playerscore += arg;
+            level_playerscore += arg;
             break;
         case SCORE_EVT_PLAYER_DAMAGED:
             G_BreakStreak(streak_timeout <= g_scorecfg[SCORE_CFG_MIN_BREAK]);
@@ -171,15 +188,18 @@ void G_RegisterScoreEvent(g_score_event_t event, int arg)
         case SCORE_EVT_SECRET_FOUND:
             in_streak = true;
             streak_timeout = MAX(streak_timeout, g_scorecfg[SCORE_CFG_SECRET_STREAK_EXTENSION]);
-            global_playerscore += g_scorecfg[SCORE_CFG_SECRET_POINTS];
+            level_playerscore += g_scorecfg[SCORE_CFG_SECRET_POINTS];
             break;
         case SCORE_EVT_ITEM_GOT:
         case SCORE_EVT_ZOMBIE_DAMAGED:
             streak_timeout = MAX(streak_timeout, g_scorecfg[SCORE_CFG_TIMEOUT]);
             break;
         case SCORE_EVT_STREAK_TIMEOUT:
+            G_BreakStreak(true);
+            break;
         case SCORE_EVT_LEVEL_DONE:
             G_BreakStreak(true);
+            G_ScoreLevelDone();
             break;
         default:
             lprintf(LO_WARN, "Invalid score event registered: %d (arg: %d)", event, arg);
