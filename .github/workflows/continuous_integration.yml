@@ -32,14 +32,14 @@ jobs:
           }
         - {
             name: "Linux GCC",
-            os: ubuntu-20.04,
+            os: ubuntu-latest,
             build_type: "Release",
             extra_options: "",
             package_name: "linux_gcc"
           }
         - {
             name: "Linux Clang",
-            os: ubuntu-20.04,
+            os: ubuntu-latest,
             build_type: "Release",
             extra_options: "-DCMAKE_C_COMPILER=/usr/bin/clang -DCMAKE_CXX_COMPILER=/usr/bin/clang++",
             package_name: "linux_clang"
