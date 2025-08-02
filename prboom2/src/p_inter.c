@@ -654,7 +654,24 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher)
   }
   P_RemoveMobj (special);
   player->bonuscount += BONUSADD;
-  G_RegisterScoreEvent(SCORE_EVT_ITEM_GOT, 0);
+  if (special->flags & MF_COUNTITEM) {
+      /* there must be a better way... */
+      if (
+          special->sprite == SPR_SOUL ||
+          special->sprite == SPR_MEGA ||
+          special->sprite == SPR_PINV ||
+          special->sprite == SPR_PSTR ||
+          special->sprite == SPR_PINS ||
+          special->sprite == SPR_SUIT ||
+          special->sprite == SPR_PMAP ||
+          special->sprite == SPR_PVIS
+         )
+          G_RegisterScoreEvent(SCORE_EVT_SPECIAL_ITEM_GOT, 0);
+      else
+          G_RegisterScoreEvent(SCORE_EVT_ITEM_GOT, 0);
+  } else {
+      G_RegisterScoreEvent(SCORE_EVT_NONCOUNTABLE_ITEM_GOT, 0);
+  }
 
   CheckThingsPickupTracer(special);//e6y
 
@@ -981,10 +998,14 @@ void P_DamageMobj(mobj_t *target,mobj_t *inflictor, mobj_t *source, int damage)
   } else if (target->flags & MF_RESSURECTED || target->type == MT_SKULL) {
       score_event = SCORE_EVT_ZOMBIE_DAMAGED;
   } else if (target->flags & MF_COUNTKILL) {
-      if (source && source->player)
-          score_event = SCORE_EVT_ENEMY_DAMAGED;
-      else
+      if (source && source->player) {
+          if (((target->health - damage) < -target->info->spawnhealth) && target->info->xdeathstate)
+              score_event = SCORE_EVT_ENEMY_OVERKILL;
+          else
+              score_event = SCORE_EVT_ENEMY_DAMAGED;
+      } else {
           score_event = SCORE_EVT_ZOMBIE_DAMAGED;
+      }
   }
   if (score_event != SCORE_EVT_NONE)
       G_RegisterScoreEvent(score_event, MIN(damage, target->health));

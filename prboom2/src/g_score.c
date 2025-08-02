@@ -112,6 +112,9 @@ void G_ScoreInit()
     g_scorecfg[SCORE_CFG_MIN_BREAK] = 1*TICRATE;
     g_scorecfg[SCORE_CFG_SECRET_POINTS] = 1000;
     g_scorecfg[SCORE_CFG_SECRET_STREAK_EXTENSION] = 15*TICRATE;
+    g_scorecfg[SCORE_CFG_ITEM_POINTS] = 5;
+    g_scorecfg[SCORE_CFG_SPECIAL_ITEM_POINTS] = 500;
+    g_scorecfg[SCORE_CFG_OVERKILL_POINTS] = 500;
     keep_score = true;
 }
 
@@ -146,16 +149,16 @@ static long long int G_CalculateStreak()
 
 static void G_BreakStreak(dboolean keep_bonus)
 {
-    in_streak = false;
     if (keep_bonus)
         level_playerscore += G_CalculateStreak();
 
-    {
+    if (in_streak) {
         char msg[SCORE_MSG_SIZE];
         sprintf(msg,"STREAK %s! +%lld", keep_bonus ? "BONUS" : "BROKEN!", keep_bonus ? G_CalculateStreak() : 0);
         G_Message(msg, TICRATE*2);
     }
 
+    in_streak = false;
     streak_bonus = 0;
 }
 
@@ -173,6 +176,13 @@ void G_RegisterScoreEvent(g_score_event_t event, int arg)
 {
     if(!keep_score) return;
     switch(event) {
+        case SCORE_EVT_ENEMY_OVERKILL:
+            in_streak = true;
+            streak_timeout = MAX(streak_timeout, g_scorecfg[SCORE_CFG_TIMEOUT]);
+            G_Message("OVERKILL! +500", TICRATE*1.5);
+            G_AccumulateStreak(arg);
+            level_playerscore += arg + g_scorecfg[SCORE_CFG_OVERKILL_POINTS];
+            break;
         case SCORE_EVT_ENEMY_DAMAGED:
             in_streak = true;
             streak_timeout = MAX(streak_timeout, g_scorecfg[SCORE_CFG_TIMEOUT]);
@@ -188,10 +198,24 @@ void G_RegisterScoreEvent(g_score_event_t event, int arg)
         case SCORE_EVT_SECRET_FOUND:
             in_streak = true;
             streak_timeout = MAX(streak_timeout, g_scorecfg[SCORE_CFG_SECRET_STREAK_EXTENSION]);
+            G_Message("SECRET FOUND! +1000", TICRATE*1.5);
             level_playerscore += g_scorecfg[SCORE_CFG_SECRET_POINTS];
             break;
+        case SCORE_EVT_SPECIAL_ITEM_GOT:
+            /* item get does NOT start a new streak */
+            streak_timeout = MAX(streak_timeout, g_scorecfg[SCORE_CFG_TIMEOUT]);
+            G_Message("POWERUP! +500", TICRATE*1.5);
+            level_playerscore += g_scorecfg[SCORE_CFG_SPECIAL_ITEM_POINTS];
+            break;
         case SCORE_EVT_ITEM_GOT:
+            level_playerscore += g_scorecfg[SCORE_CFG_ITEM_POINTS];
+            /* WARN: intentional fall through */
+        case SCORE_EVT_NONCOUNTABLE_ITEM_GOT:
+            /* item get does NOT start a new streak */
+            streak_timeout = MAX(streak_timeout, g_scorecfg[SCORE_CFG_TIMEOUT]);
+            break;
         case SCORE_EVT_ZOMBIE_DAMAGED:
+            /* zombie damage does NOT start a new streak */
             streak_timeout = MAX(streak_timeout, g_scorecfg[SCORE_CFG_TIMEOUT]);
             break;
         case SCORE_EVT_STREAK_TIMEOUT:
