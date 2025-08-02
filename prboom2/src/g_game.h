@@ -87,7 +87,10 @@ void G_MakeSpecialEvent(buttoncode_t bc, ...); /* cph - new event stuff */
 int G_ValidateMapName(const char *mapname, int *pEpi, int *pMap);
 
 // jds - achievement tracking
-dboolean G_Check100pAchieved();
+dboolean G_Check100pMaxAchieved();
+dboolean G_Check100pItemsAchieved();
+dboolean G_Check100pKillsAchieved();
+dboolean G_Check100pSecretsAchieved();
 
 // jds - time warping
 void G_TimeWarpForward();

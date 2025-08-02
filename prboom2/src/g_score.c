@@ -124,8 +124,8 @@ void G_ScoreInit()
     g_scorecfg[SCORE_CFG_SECRET_POINTS] = 1000;
     g_scorecfg[SCORE_CFG_SECRET_STREAK_EXTENSION] = 15*TICRATE;
     g_scorecfg[SCORE_CFG_ITEM_POINTS] = 5;
-    g_scorecfg[SCORE_CFG_SPECIAL_ITEM_POINTS] = 250;
-    g_scorecfg[SCORE_CFG_OVERKILL_POINTS] = 250;
+    g_scorecfg[SCORE_CFG_SPECIAL_ITEM_POINTS] = 200;
+    g_scorecfg[SCORE_CFG_OVERKILL_POINTS] = 100;
     g_scorecfg[SCORE_CFG_100P_ITEMS] = 1000;
     g_scorecfg[SCORE_CFG_100P_SECRETS] = 2500;
     g_scorecfg[SCORE_CFG_100P_KILLS] = 2500;
@@ -140,6 +140,7 @@ void G_ScoreReset(dboolean clear_total)
         total_playerscore = 0;
     level_playerscore = 0;
     in_streak = false;
+    streak_bonus = 0;
     G_Message(NULL, -1, -1);
 }
 
@@ -212,9 +213,12 @@ void G_RegisterScoreEvent(g_score_event_t event, int arg)
             G_BreakStreak(streak_timeout <= g_scorecfg[SCORE_CFG_MIN_BREAK]);
             break;
         case SCORE_EVT_SECRET_FOUND:
-            in_streak = true;
             streak_timeout = MAX(streak_timeout, g_scorecfg[SCORE_CFG_SECRET_STREAK_EXTENSION]);
-            G_Message("SECRET FOUND!", TICRATE*1.5, g_scorecfg[SCORE_CFG_SECRET_POINTS]);
+            if (in_streak)
+                G_Message("SECRET FOUND! (DAMAGE STREAK EXTENDED)", TICRATE*1.5, g_scorecfg[SCORE_CFG_SECRET_POINTS]);
+            else
+                G_Message("SECRET FOUND! (DAMAGE STREAK STARTED)", TICRATE*1.5, g_scorecfg[SCORE_CFG_SECRET_POINTS]);
+            in_streak = true;
             level_playerscore += g_scorecfg[SCORE_CFG_SECRET_POINTS];
             break;
         case SCORE_EVT_SPECIAL_ITEM_GOT:
@@ -242,19 +246,19 @@ void G_RegisterScoreEvent(g_score_event_t event, int arg)
             G_ScoreLevelDone();
             break;
         case SCORE_EVT_100P_ITEMS:
-            G_Message("ALL ITEMS FOUND!", TICRATE*1.5, g_scorecfg[SCORE_CFG_100P_ITEMS]);
+            G_Message("ALL ITEMS FOUND!", TICRATE*2, g_scorecfg[SCORE_CFG_100P_ITEMS]);
             level_playerscore += g_scorecfg[SCORE_CFG_100P_ITEMS];
             break;
         case SCORE_EVT_100P_SECRETS:
-            G_Message("ALL SECRETS FOUND!", TICRATE*1.5, g_scorecfg[SCORE_CFG_100P_SECRETS]);
+            G_Message("ALL SECRETS FOUND!", TICRATE*2, g_scorecfg[SCORE_CFG_100P_SECRETS]);
             level_playerscore += g_scorecfg[SCORE_CFG_100P_SECRETS];
             break;
         case SCORE_EVT_100P_KILLS:
-            G_Message("ALL MONSTERS KILLED!", TICRATE*1.5, g_scorecfg[SCORE_CFG_100P_KILLS]);
+            G_Message("ALL MONSTERS KILLED!", TICRATE*2, g_scorecfg[SCORE_CFG_100P_KILLS]);
             level_playerscore += g_scorecfg[SCORE_CFG_100P_KILLS];
             break;
         case SCORE_EVT_100P_MAX:
-            G_Message("100\% MAX ACHIEVED", TICRATE*1.5, g_scorecfg[SCORE_CFG_100P_MAX]);
+            G_Message("100% MAX ACHIEVED", TICRATE*3, g_scorecfg[SCORE_CFG_100P_MAX]);
             level_playerscore += g_scorecfg[SCORE_CFG_100P_MAX];
             break;
         default:

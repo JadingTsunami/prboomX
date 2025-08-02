@@ -2725,8 +2725,10 @@ void HU_Drawer(void)
       HU_widget_build_fps();
   HU_widget_draw_fps();
 
-  HU_widget_build_score();
-  HU_widget_draw_score();
+  if (!(automapmode & am_active)) {
+      HU_widget_build_score();
+      HU_widget_draw_score();
+  }
 
   //jff 3/4/98 display last to give priority
   HU_Erase(); // jff 4/24/98 Erase current lines before drawing current

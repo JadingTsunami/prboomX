@@ -5235,7 +5235,102 @@ void G_AutoSaveTimeWarpTimelineOnExit()
       G_TimeWarpSaveTimelineAsFile(G_TimeWarpGenerateFilename());
 }
 
-dboolean G_Check100pAchieved()
+static void G_Announce100pMaxAchieved()
+{
+    int sfx_id = (I_GetSfxLumpNum(&S_sfx[sfx_maxall]) < 0 ? sfx_itmbk : sfx_maxall);
+    SetCustomMessage(consoleplayer, STSTR_ALL100P, 0, 4 * TICRATE, CR_BLACK, sfx_id);
+}
+
+static void G_Announce100pItemsAchieved()
+{
+    int sfx_id = (I_GetSfxLumpNum(&S_sfx[sfx_itmall]) < 0 ? sfx_itmbk : sfx_itmall);
+    SetCustomMessage(consoleplayer, STSTR_ALLITEMSFOUND, 0, 2 * TICRATE, CR_BLUE2, sfx_id);
+}
+
+static void G_Announce100pKillsAchieved()
+{
+    int sfx_id = (I_GetSfxLumpNum(&S_sfx[sfx_kilall]) < 0 ? sfx_itmbk : sfx_kilall);
+    SetCustomMessage(consoleplayer, STSTR_ALLMONSTERSKILLED, 0, 2 * TICRATE, CR_RED, sfx_id);
+}
+
+static void G_Announce100pSecretsAchieved()
+{
+    int sfx_id = (I_GetSfxLumpNum(&S_sfx[sfx_secall]) < 0 ? sfx_itmbk : sfx_secall);
+    SetCustomMessage(consoleplayer, STSTR_ALLSECRETFOUND, 0, 2 * TICRATE, CR_GREEN, sfx_id);
+}
+
+dboolean G_Check100pItemsAchieved()
+{
+    unsigned int i;
+    unsigned int playeritems = 0;
+
+    if (!hudadd_announce_100p_items)
+        return false;
+
+    for (i = 0; i<MAXPLAYERS; i++) {
+        if (playeringame[i]) {
+            playeritems += players[i].itemcount;
+        }
+    }
+
+    if (playeritems == totalitems) {
+        G_Announce100pItemsAchieved();
+        if (G_ShouldKeepScore())
+            G_RegisterScoreEvent(SCORE_EVT_100P_ITEMS, 0);
+        return true;
+    }
+
+    return false;
+}
+
+dboolean G_Check100pKillsAchieved()
+{
+    unsigned int i;
+    unsigned int playerkills = 0;
+
+    if (!hudadd_announce_100p_kills)
+        return false;
+
+    for (i = 0; i<MAXPLAYERS; i++) {
+        if (playeringame[i]) {
+            playerkills += (players[i].killcount - players[i].resurectedkillcount);
+        }
+    }
+
+    if (playerkills == totalkills) {
+        G_Announce100pKillsAchieved();
+        if (G_ShouldKeepScore())
+            G_RegisterScoreEvent(SCORE_EVT_100P_KILLS, 0);
+        return true;
+    }
+
+    return false;
+}
+
+dboolean G_Check100pSecretsAchieved()
+{
+    unsigned int i;
+    unsigned int playersecrets = 0;
+    if (!hudadd_announce_100p_secrets)
+        return false;
+
+    for (i = 0; i<MAXPLAYERS; i++) {
+        if (playeringame[i]) {
+            playersecrets += players[i].secretcount;
+        }
+    }
+
+    if (playersecrets == totalsecret) {
+        G_Announce100pSecretsAchieved();
+        if (G_ShouldKeepScore())
+            G_RegisterScoreEvent(SCORE_EVT_100P_SECRETS, 0);
+        return true;
+    }
+
+    return false;
+}
+
+dboolean G_Check100pMaxAchieved()
 {
     unsigned int i;
     unsigned int playersecrets = 0;
@@ -5254,8 +5349,9 @@ dboolean G_Check100pAchieved()
     }
 
     if (playeritems == totalitems && playersecrets == totalsecret && playerkills == totalkills) {
-        int sfx_id = (I_GetSfxLumpNum(&S_sfx[sfx_maxall]) < 0 ? sfx_itmbk : sfx_maxall);
-        SetCustomMessage(consoleplayer, STSTR_ALL100P, 0, 4 * TICRATE, CR_BLACK, sfx_id);
+        G_Announce100pMaxAchieved();
+        if (G_ShouldKeepScore())
+            G_RegisterScoreEvent(SCORE_EVT_100P_MAX, 0);
         return true;
     }
 

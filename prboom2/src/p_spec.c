@@ -2376,31 +2376,15 @@ void P_PlayerInSpecialSector (player_t* player)
         player->secretcount++;
         G_RegisterScoreEvent(SCORE_EVT_SECRET_FOUND, 0);
         sector->special = 0;
-        if (hudadd_announce_100p_secrets || C_CvarIsSet("announce_100p_max")) {
-            unsigned int i;
-            unsigned int playersecrets = 0;
-            for (i = 0; i<MAXPLAYERS; i++) {
-                if (playeringame[i]) {
-                    playersecrets += players[i].secretcount;
-                }
-            }
-
-            if (playersecrets == totalsecret) {
-                if (G_Check100pAchieved()) {
-                    break;
-                } else if (hudadd_announce_100p_secrets) {
-                    int sfx_id = (I_GetSfxLumpNum(&S_sfx[sfx_secall]) < 0 ? sfx_itmbk : sfx_secall);
-                    SetCustomMessage(player - players, STSTR_ALLSECRETFOUND, 0, 2 * TICRATE, CR_GREEN, sfx_id);
-                    break;
-                }
-            }
-        }
 
         //e6y
         if (hudadd_secretarea) {
             int sfx_id = (I_GetSfxLumpNum(&S_sfx[sfx_secret]) < 0 ? sfx_itmbk : sfx_secret);
             SetCustomMessage(player - players, STSTR_SECRETFOUND, 0, 2 * TICRATE, CR_GOLD, sfx_id);
         }
+
+        if (!G_Check100pMaxAchieved())
+            G_Check100pSecretsAchieved();
 
         break;
 
