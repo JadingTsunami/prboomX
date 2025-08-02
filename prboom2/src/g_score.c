@@ -22,7 +22,14 @@ dboolean G_ShouldKeepScore()
     return keep_score;
 }
 
-static void G_Message(const char* msg, int duration)
+/* FIXME, this should be cleaned up, right now it works like:
+ * Duration < 0: Clear message (blank)
+ * Duration == 0: Show default message
+ * Duration > 0: Show given message for duration
+ *  duration > 0 && points > 0: Append "+points" to message
+ *  duration > 0 && points < 0: Don't append anything to message
+*/
+static void G_Message(const char* msg, int duration, long long int points)
 {
     static unsigned int durleft = 0;
     if (duration < 0) {
@@ -37,7 +44,11 @@ static void G_Message(const char* msg, int duration)
         /* clip to 3 seconds max */
         duration = MIN(duration, TICRATE*3);
         durleft = duration;
-        strncpy(scoremsg, msg, SCORE_MSG_SIZE);
+        if (points >= 0)
+            snprintf(scoremsg, SCORE_MSG_SIZE, "%s +%lld", msg, points);
+        else
+            strncpy(scoremsg, msg, SCORE_MSG_SIZE);
+            
     } else {
         /* no new message */
         if (in_streak && streak_timeout > 0)
@@ -99,7 +110,7 @@ void G_ScoreTicker()
         }
         scoretime = TICRATE;
     }
-    G_Message(NULL, 0);
+    G_Message(NULL, 0, -1);
 }
 
 void G_ScoreInit()
@@ -113,8 +124,13 @@ void G_ScoreInit()
     g_scorecfg[SCORE_CFG_SECRET_POINTS] = 1000;
     g_scorecfg[SCORE_CFG_SECRET_STREAK_EXTENSION] = 15*TICRATE;
     g_scorecfg[SCORE_CFG_ITEM_POINTS] = 5;
-    g_scorecfg[SCORE_CFG_SPECIAL_ITEM_POINTS] = 500;
-    g_scorecfg[SCORE_CFG_OVERKILL_POINTS] = 500;
+    g_scorecfg[SCORE_CFG_SPECIAL_ITEM_POINTS] = 250;
+    g_scorecfg[SCORE_CFG_OVERKILL_POINTS] = 250;
+    g_scorecfg[SCORE_CFG_100P_ITEMS] = 1000;
+    g_scorecfg[SCORE_CFG_100P_SECRETS] = 2500;
+    g_scorecfg[SCORE_CFG_100P_KILLS] = 2500;
+    g_scorecfg[SCORE_CFG_100P_MAX] = 25000;
+
     keep_score = true;
 }
 
@@ -124,7 +140,7 @@ void G_ScoreReset(dboolean clear_total)
         total_playerscore = 0;
     level_playerscore = 0;
     in_streak = false;
-    G_Message(NULL, -1);
+    G_Message(NULL, -1, -1);
 }
 
 int G_GetStreakTimeLeft()
@@ -155,7 +171,7 @@ static void G_BreakStreak(dboolean keep_bonus)
     if (in_streak) {
         char msg[SCORE_MSG_SIZE];
         sprintf(msg,"STREAK %s! +%lld", keep_bonus ? "BONUS" : "BROKEN!", keep_bonus ? G_CalculateStreak() : 0);
-        G_Message(msg, TICRATE*2);
+        G_Message(msg, TICRATE*2, -1);
     }
 
     in_streak = false;
@@ -179,7 +195,7 @@ void G_RegisterScoreEvent(g_score_event_t event, int arg)
         case SCORE_EVT_ENEMY_OVERKILL:
             in_streak = true;
             streak_timeout = MAX(streak_timeout, g_scorecfg[SCORE_CFG_TIMEOUT]);
-            G_Message("OVERKILL! +500", TICRATE*1.5);
+            G_Message("OVERKILL!", TICRATE*1.5, g_scorecfg[SCORE_CFG_OVERKILL_POINTS]);
             G_AccumulateStreak(arg);
             level_playerscore += arg + g_scorecfg[SCORE_CFG_OVERKILL_POINTS];
             break;
@@ -198,13 +214,13 @@ void G_RegisterScoreEvent(g_score_event_t event, int arg)
         case SCORE_EVT_SECRET_FOUND:
             in_streak = true;
             streak_timeout = MAX(streak_timeout, g_scorecfg[SCORE_CFG_SECRET_STREAK_EXTENSION]);
-            G_Message("SECRET FOUND! +1000", TICRATE*1.5);
+            G_Message("SECRET FOUND!", TICRATE*1.5, g_scorecfg[SCORE_CFG_SECRET_POINTS]);
             level_playerscore += g_scorecfg[SCORE_CFG_SECRET_POINTS];
             break;
         case SCORE_EVT_SPECIAL_ITEM_GOT:
             /* item get does NOT start a new streak */
             streak_timeout = MAX(streak_timeout, g_scorecfg[SCORE_CFG_TIMEOUT]);
-            G_Message("POWERUP! +500", TICRATE*1.5);
+            G_Message("POWERUP!", TICRATE*1.5, g_scorecfg[SCORE_CFG_SPECIAL_ITEM_POINTS]);
             level_playerscore += g_scorecfg[SCORE_CFG_SPECIAL_ITEM_POINTS];
             break;
         case SCORE_EVT_ITEM_GOT:
@@ -224,6 +240,22 @@ void G_RegisterScoreEvent(g_score_event_t event, int arg)
         case SCORE_EVT_LEVEL_DONE:
             G_BreakStreak(true);
             G_ScoreLevelDone();
+            break;
+        case SCORE_EVT_100P_ITEMS:
+            G_Message("ALL ITEMS FOUND!", TICRATE*1.5, g_scorecfg[SCORE_CFG_100P_ITEMS]);
+            level_playerscore += g_scorecfg[SCORE_CFG_100P_ITEMS];
+            break;
+        case SCORE_EVT_100P_SECRETS:
+            G_Message("ALL SECRETS FOUND!", TICRATE*1.5, g_scorecfg[SCORE_CFG_100P_SECRETS]);
+            level_playerscore += g_scorecfg[SCORE_CFG_100P_SECRETS];
+            break;
+        case SCORE_EVT_100P_KILLS:
+            G_Message("ALL MONSTERS KILLED!", TICRATE*1.5, g_scorecfg[SCORE_CFG_100P_KILLS]);
+            level_playerscore += g_scorecfg[SCORE_CFG_100P_KILLS];
+            break;
+        case SCORE_EVT_100P_MAX:
+            G_Message("100\% MAX ACHIEVED", TICRATE*1.5, g_scorecfg[SCORE_CFG_100P_MAX]);
+            level_playerscore += g_scorecfg[SCORE_CFG_100P_MAX];
             break;
         default:
             lprintf(LO_WARN, "Invalid score event registered: %d (arg: %d)", event, arg);
