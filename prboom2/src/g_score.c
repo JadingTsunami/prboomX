@@ -258,7 +258,7 @@ void G_RegisterScoreEvent(g_score_event_t event, int arg)
             level_playerscore += g_scorecfg[SCORE_CFG_100P_KILLS];
             break;
         case SCORE_EVT_100P_MAX:
-            G_Message("100% MAX ACHIEVED", TICRATE*3, g_scorecfg[SCORE_CFG_100P_MAX]);
+            G_Message("100%% MAX ACHIEVED", TICRATE*3, g_scorecfg[SCORE_CFG_100P_MAX]);
             level_playerscore += g_scorecfg[SCORE_CFG_100P_MAX];
             break;
         default:
