@@ -5264,7 +5264,7 @@ dboolean G_Check100pItemsAchieved()
     unsigned int i;
     unsigned int playeritems = 0;
 
-    if (!hudadd_announce_100p_items)
+    if (!(hudadd_announce_100p_items || G_ShouldKeepScore()))
         return false;
 
     for (i = 0; i<MAXPLAYERS; i++) {
@@ -5274,7 +5274,8 @@ dboolean G_Check100pItemsAchieved()
     }
 
     if (playeritems == totalitems) {
-        G_Announce100pItemsAchieved();
+        if (hudadd_announce_100p_items)
+            G_Announce100pItemsAchieved();
         if (G_ShouldKeepScore())
             G_RegisterScoreEvent(SCORE_EVT_100P_ITEMS, 0);
         return true;
@@ -5288,7 +5289,7 @@ dboolean G_Check100pKillsAchieved()
     unsigned int i;
     unsigned int playerkills = 0;
 
-    if (!hudadd_announce_100p_kills)
+    if (!(hudadd_announce_100p_kills || G_ShouldKeepScore()))
         return false;
 
     for (i = 0; i<MAXPLAYERS; i++) {
@@ -5298,7 +5299,8 @@ dboolean G_Check100pKillsAchieved()
     }
 
     if (playerkills == totalkills) {
-        G_Announce100pKillsAchieved();
+        if (hudadd_announce_100p_kills)
+            G_Announce100pKillsAchieved();
         if (G_ShouldKeepScore())
             G_RegisterScoreEvent(SCORE_EVT_100P_KILLS, 0);
         return true;
@@ -5311,7 +5313,7 @@ dboolean G_Check100pSecretsAchieved()
 {
     unsigned int i;
     unsigned int playersecrets = 0;
-    if (!hudadd_announce_100p_secrets)
+    if (!(hudadd_announce_100p_secrets || G_ShouldKeepScore()))
         return false;
 
     for (i = 0; i<MAXPLAYERS; i++) {
@@ -5321,7 +5323,8 @@ dboolean G_Check100pSecretsAchieved()
     }
 
     if (playersecrets == totalsecret) {
-        G_Announce100pSecretsAchieved();
+        if (hudadd_announce_100p_secrets)
+            G_Announce100pSecretsAchieved();
         if (G_ShouldKeepScore())
             G_RegisterScoreEvent(SCORE_EVT_100P_SECRETS, 0);
         return true;
@@ -5337,7 +5340,7 @@ dboolean G_Check100pMaxAchieved()
     unsigned int playerkills = 0;
     unsigned int playeritems = 0;
 
-    if (!C_CvarIsSet("announce_100p_max"))
+    if (!(C_CvarIsSet("announce_100p_max") || G_ShouldKeepScore()))
         return false;
 
     for (i = 0; i<MAXPLAYERS; i++) {
@@ -5349,7 +5352,8 @@ dboolean G_Check100pMaxAchieved()
     }
 
     if (playeritems == totalitems && playersecrets == totalsecret && playerkills == totalkills) {
-        G_Announce100pMaxAchieved();
+        if (C_CvarIsSet("announce_100p_max"))
+            G_Announce100pMaxAchieved();
         if (G_ShouldKeepScore())
             G_RegisterScoreEvent(SCORE_EVT_100P_MAX, 0);
         return true;
