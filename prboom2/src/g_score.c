@@ -161,7 +161,7 @@ long long int G_GetTotalScore()
 
 static long long int G_CalculateStreak()
 {
-    return (long long int) (2*pow((streak_bonus/6.0),1.5));
+    return (long long int) (1.8*pow((streak_bonus/8.0),1.4));
 }
 
 static void G_BreakStreak(dboolean keep_bonus)
