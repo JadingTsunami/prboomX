@@ -15,7 +15,6 @@ static dboolean in_streak = false;
 static int g_scorecfg[SCORE_CFG_LAST] = { 0 };
 
 static char scoremsg[SCORE_MSG_SIZE] = { 0 };
-static int scoretime = TICRATE;
 
 dboolean G_ShouldKeepScore()
 {
@@ -38,9 +37,9 @@ static void G_Message(const char* msg, int duration, long long int points)
         scoremsg[0] = '\0';
         return;
     }
-    if (duration == 0 && durleft > 0 && scoremsg[0]) {
+    if (durleft > 0 && scoremsg[0]) {
         durleft--;
-    } else if (msg) {
+    } else if (msg && duration > 0) {
         /* clip to 3 seconds max */
         duration = MIN(duration, TICRATE*3);
         durleft = duration;
@@ -48,7 +47,6 @@ static void G_Message(const char* msg, int duration, long long int points)
             snprintf(scoremsg, SCORE_MSG_SIZE, "%s +%lld", msg, points);
         else
             strncpy(scoremsg, msg, SCORE_MSG_SIZE);
-            
     } else {
         /* no new message */
         if (in_streak && streak_timeout > 0)
@@ -108,7 +106,6 @@ void G_ScoreTicker()
         } else {
             G_RegisterScoreEvent(SCORE_EVT_STREAK_TIMEOUT, 0);
         }
-        scoretime = TICRATE;
     }
     G_Message(NULL, 0, -1);
 }
@@ -172,7 +169,7 @@ static void G_BreakStreak(dboolean keep_bonus)
     if (in_streak) {
         char msg[SCORE_MSG_SIZE];
         sprintf(msg,"STREAK %s! +%lld", keep_bonus ? "BONUS" : "BROKEN!", keep_bonus ? G_CalculateStreak() : 0);
-        G_Message(msg, TICRATE*2, -1);
+        G_Message(msg, keep_bonus ? TICRATE*2 : TICRATE, -1);
     }
 
     in_streak = false;
@@ -203,9 +200,6 @@ void G_RegisterScoreEvent(g_score_event_t event, int arg)
         case SCORE_EVT_ENEMY_DAMAGED:
             in_streak = true;
             streak_timeout = MAX(streak_timeout, g_scorecfg[SCORE_CFG_TIMEOUT]);
-            /* temporary */
-            if (scoretime > 0) scoremsg[0] = '\0';
-            /* end temporary */
             G_AccumulateStreak(arg);
             level_playerscore += arg;
             break;
