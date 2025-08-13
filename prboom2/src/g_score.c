@@ -204,7 +204,9 @@ void G_RegisterScoreEvent(g_score_event_t event, int arg)
             level_playerscore += arg;
             break;
         case SCORE_EVT_PLAYER_DAMAGED:
-            G_BreakStreak(streak_timeout <= g_scorecfg[SCORE_CFG_MIN_BREAK]);
+            //G_BreakStreak(streak_timeout <= g_scorecfg[SCORE_CFG_MIN_BREAK]);
+            // for biz
+            G_BreakStreak(true);
             break;
         case SCORE_EVT_SECRET_FOUND:
             streak_timeout = MAX(streak_timeout, g_scorecfg[SCORE_CFG_SECRET_STREAK_EXTENSION]);
