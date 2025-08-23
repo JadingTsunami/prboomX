@@ -1399,9 +1399,9 @@ int HU_GetAmmoColor(int ammo, int fullammo, int def, int tofire, dboolean backpa
     (ammo_colour_behaviour == ammo_colour_behaviour_no && backpack && ammo*2 >= fullammo))
     result=def;
   else {
-    ammopct = (100 * ammo) / fullammo;
-    if (backpack && ammo_colour_behaviour != ammo_colour_behaviour_yes)
-      ammopct *= 2;
+      ammopct = (((backpack &&
+		   (ammo_colour_behaviour != ammo_colour_behaviour_yes))
+		  ? 200 : 100) * ammo) / fullammo;
     if (ammopct < ammo_red)
       result = CR_RED;
     else if (ammopct < ammo_yellow)
@@ -1775,12 +1775,17 @@ void HU_widget_build_weapon(void)
       (ammo_colour_behaviour == ammo_colour_behaviour_no &&
       plr->backpack && ammo*2 >= fullammo)))
       hud_weapstr[i++] = '0'+CR_BLUE;
-    else
-    {
-      ammopct = fullammo ? (100*ammo)/fullammo : 100;
-      if (plr->backpack && fullammo &&
-        ammo_colour_behaviour != ammo_colour_behaviour_yes)
-        ammopct *= 2;
+    else {
+      if (fullammo) {
+	ammopct = (plr->backpack &&
+		   ammo_colour_behaviour != ammo_colour_behaviour_yes) ?
+	200 : 100;
+	ammopct *=ammo; ammopct /= fullammo;
+      } else {
+// I'm not sure we can get here - are there weapons where fullammo = 0 but
+// not weaponinfo[w].ammo==am_noammo? But it's been this way since 2010...
+	ammopct = 100; 
+      }
       if (ammopct<ammo_red)
         hud_weapstr[i++] = '0'+CR_RED;
       else if (ammopct<ammo_yellow)

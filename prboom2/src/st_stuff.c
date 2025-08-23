@@ -858,9 +858,10 @@ static void ST_drawWidgets(dboolean refresh)
     STlib_updateNum(&w_ready, CR_BLUE2, refresh);
   else {
     if (plyr->maxammo[weaponinfo[w_ready.data].ammo])
-      ammopct = (*w_ready.num*100)/plyr->maxammo[weaponinfo[w_ready.data].ammo];
-    if (plyr->backpack && ammo_colour_behaviour != ammo_colour_behaviour_yes)
-      ammopct *= 2;
+	ammopct = (((plyr->backpack &&
+		     (ammo_colour_behaviour != ammo_colour_behaviour_yes))
+		    ? 200: 100) * *w_ready.num /
+		   plyr->maxammo[weaponinfo[w_ready.data].ammo]);
     if (ammopct < ammo_red)
       STlib_updateNum(&w_ready, CR_RED, refresh);
     else
