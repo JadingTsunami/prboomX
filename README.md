@@ -6,7 +6,7 @@ This is my own personal fork of PrBoom-Plus. It contains quality-of-play upgrade
 
 # Installation
 
-* [Latest release](https://github.com/JadingTsunami/prboomX/releases/tag/prboomX-1.0.0)
+* [Latest release](https://github.com/JadingTsunami/prboomX/releases/tag/prboomX-2.7.0)
 * [Development builds](https://github.com/JadingTsunami/prboomX/actions)
 
 Install [PrBoom-Plus](https://github.com/coelckers/prboom-plus) and place the binaries for prboomX alongside your `prboom-plus` executable. Run the `prboomX` executable to launch prboomX instead. Your PrBoom-Plus configuration and save data will not be affected; you can run both in parallel.
