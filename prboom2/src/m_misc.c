@@ -992,6 +992,9 @@ default_t defaults[] =
    def_int,ss_stat}, // amount of armor for yellow to green transition
   {"armor_green",   {&armor_green}  , {100},0,200,// below is green, above blue
    def_int,ss_stat}, // amount of armor for green to blue transition
+  {"hud_bar_maximum",{(int*)&hud_bar_maximum},
+   {2}, // health/armor bars go to 100 / 200 / dehacked max
+   0,hud_bar_maximum_max-1,def_int,ss_stat},
   {"ammo_red",      {&ammo_red}     , {25},0,100, // below 25% is red
    def_int,ss_stat}, // percent of ammo for red to yellow transition
   {"ammo_yellow",   {&ammo_yellow}  , {50},0,100, // below 50% is yellow, above green

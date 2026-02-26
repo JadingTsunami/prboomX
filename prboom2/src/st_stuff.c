@@ -336,6 +336,14 @@ int armor_red;     // armor amount less than which status is red
 int armor_yellow;  // armor amount less than which status is yellow
 int armor_green;   // armor amount above is blue, below is green
 
+hud_bar_maximum_t hud_bar_maximum;
+const char *hud_bar_maximum_list[hud_bar_maximum_max] = {
+  "100/100",
+  "200/200",
+  "medikit/green",
+  "soulsphere/blue"
+};
+
 ammo_colour_behaviour_t ammo_colour_behaviour;
 const char *ammo_colour_behaviour_list[ammo_colour_behaviour_max] = {
   "no",

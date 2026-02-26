@@ -2860,9 +2860,11 @@ setup_menu_t stat_settings1[] =  // Status Bar and HUD Settings screen
   {"ARMOR LOW/OK"      ,S_NUM       ,m_null,SB_X,SB_Y+11*8, {"armor_red"}},
   {"ARMOR OK/GOOD"     ,S_NUM       ,m_null,SB_X,SB_Y+12*8, {"armor_yellow"}},
   {"ARMOR GOOD/EXTRA"  ,S_NUM       ,m_null,SB_X,SB_Y+13*8, {"armor_green"}},
-  {"AMMO LOW/OK"       ,S_NUM       ,m_null,SB_X,SB_Y+14*8, {"ammo_red"}},
-  {"AMMO OK/GOOD"      ,S_NUM       ,m_null,SB_X,SB_Y+15*8, {"ammo_yellow"}},
-  {"BACKPACK CHANGES THRESHOLDS",S_CHOICE,m_null,SB_X,SB_Y+16*8, 
+  {"MAXIMUM VALUE FOR HUD BAR",S_CHOICE,m_null,SB_X,SB_Y+14*8,
+   {"hud_bar_maximum"},0,0,NULL,hud_bar_maximum_list},
+  {"AMMO LOW/OK"       ,S_NUM       ,m_null,SB_X,SB_Y+15*8, {"ammo_red"}},
+  {"AMMO OK/GOOD"      ,S_NUM       ,m_null,SB_X,SB_Y+16*8, {"ammo_yellow"}},
+  {"BACKPACK CHANGES THRESHOLDS",S_CHOICE,m_null,SB_X,SB_Y+17*8, 
    {"ammo_colour_behaviour"},0,0,NULL,ammo_colour_behaviour_list},
 
   // Button for resetting to defaults

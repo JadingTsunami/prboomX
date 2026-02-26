@@ -111,6 +111,16 @@ extern int sts_armorcolor_type;  // armor color depends on type
 extern int st_palette;    // cph 2006/04/06 - make palette visible
 
 typedef enum {
+    hud_bar_maximum_hundred,
+    hud_bar_maximum_twohundred,
+    hud_bar_maximum_deh,
+    hud_bar_maximum_deh_super,
+    hud_bar_maximum_max
+} hud_bar_maximum_t;
+extern hud_bar_maximum_t hud_bar_maximum;
+extern const char *hud_bar_maximum_list[];
+
+typedef enum {
   ammo_colour_behaviour_no,
   ammo_colour_behaviour_full_only,
   ammo_colour_behaviour_yes,

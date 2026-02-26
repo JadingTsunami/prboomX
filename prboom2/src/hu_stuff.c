@@ -115,6 +115,9 @@ int hud_num;
 #define key_alt KEYD_RALT
 #define key_shift KEYD_RSHIFT
 
+// This probably never changes but should divide evenly into 100
+#define HUD_MAX_BARS 25
+
 const char* chat_macros[] =
 // Ty 03/27/98 - *not* externalized
 // CPhipps - const char*
@@ -1109,6 +1112,8 @@ void HU_widget_build_armor(void);
 void HU_widget_draw_armor(void);
 void HU_widget_build_hudadd(void);
 void HU_widget_draw_hudadd(void);
+static int HU_count_health_bars(void);
+static int HU_count_armor_bars(void);
 
 void HU_widget_build_health_big(void);
 void HU_widget_draw_health_big(void);
@@ -1485,7 +1490,7 @@ void HU_widget_build_health(void)
   char *s;
   char healthstr[80];//jff
   int health = plr->health;
-  int healthbars = health>100? 25 : health/4;
+  int healthbars = HU_count_health_bars();
 
   if (w_health.val != -1 && w_health.val == health)
     return;
@@ -1620,7 +1625,7 @@ void HU_widget_build_armor(void)
   char *s;
   char armorstr[80]; //jff
   int armor = plr->armorpoints;
-  int armorbars = armor>100? 25 : armor/4;
+  int armorbars = HU_count_armor_bars();
 
   if (w_armor.val != -1 && w_armor.val == armor)
     return;
@@ -3182,4 +3187,53 @@ int SetCustomMessage(int plr, const char *msg, int delay, int ticks, int cm, int
   }
 
   return true;
+}
+
+static int HU_count_health_bars(void) {
+    int numerator = plr->health * 100;
+    int divisor; int result;
+
+    switch (hud_bar_maximum) {
+    case hud_bar_maximum_twohundred:
+	divisor = 200;
+	break;
+    case hud_bar_maximum_deh:
+	divisor = maxhealth;
+	break;
+    case hud_bar_maximum_deh_super:
+	divisor = max_soul; // ignore maxhealthbonus
+	break;
+    case hud_bar_maximum_hundred:
+    default:
+	divisor = 100;
+	break;
+    }
+    if (divisor <= 0) divisor = 100;
+    // We can't just do "(numerator * HUD_MAX_BARS) / (divisor * 100)" here
+    // it would integer overflow with 16-bit ints and max health > 320
+    result = numerator / (divisor * (100 / HUD_MAX_BARS));
+    return (result > HUD_MAX_BARS) ? HUD_MAX_BARS : result;
+}
+static int HU_count_armor_bars(void) {
+    int numerator = plr->armorpoints;
+    int divisor; int result;
+    
+    switch (hud_bar_maximum) {
+    case hud_bar_maximum_twohundred:
+	divisor = 2;
+	break;
+    case hud_bar_maximum_deh:
+	divisor = green_armor_class;
+	break;
+    case hud_bar_maximum_deh_super:
+	divisor = blue_armor_class;
+	break;
+    case hud_bar_maximum_hundred:
+    default:
+	divisor = 1;
+	break;
+    }
+    if (divisor <= 0) divisor = 1;
+    result = numerator / (divisor * (100 / HUD_MAX_BARS));
+    return (result > HUD_MAX_BARS) ? HUD_MAX_BARS : result;
 }
