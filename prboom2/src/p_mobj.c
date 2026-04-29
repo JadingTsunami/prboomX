@@ -52,6 +52,7 @@
 #include "g_overflow.h"
 #include "e6y.h"//e6y
 #include "c_cvar.h"
+#include "p_spec.h"
 
 // [FG] colored blood and gibs
 dboolean colored_blood;
@@ -836,6 +837,20 @@ void P_MobjThinker (mobj_t* mobj)
   else
     mobj->intflags &= ~MIF_FALLING, mobj->gear = 0;  // Reset torque
       }
+
+  // mbf21 kill monsters in special sector
+  if (mbf21_features && mobj->subsector &&
+          mobj->subsector->sector &&
+          (mobj->subsector->sector->special & KILL_GROUNDED_MONSTERS_MASK) &&
+          mobj->type != MT_PLAYER &&
+          mobj->z == mobj->floorz &&  // monster is on the ground
+          mobj->flags & MF_SHOOTABLE && // can be hurt/killed
+          mobj->health > 0 && // not already dead
+          !(mobj->flags & MF_FLOAT) // not floating enemy type
+     ) {
+      P_DamageMobj(mobj, NULL, NULL, mobj->health);
+      return;
+  }
 
   // cycle through states,
   // calling action functions at transitions

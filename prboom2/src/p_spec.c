@@ -2421,7 +2421,7 @@ void P_PlayerInSpecialSector (player_t* player)
   }
   else //jff 3/14/98 handle extended sector types for secrets and damage
   {
-      if (mbf21 && sector->special&ALT_DAMAGE_MASK) {
+      if (mbf21_features && sector->special&ALT_DAMAGE_MASK) {
           int i;
           switch ((sector->special&DAMAGE_MASK)>>DAMAGE_SHIFT)
           {
