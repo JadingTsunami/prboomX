@@ -2421,29 +2421,60 @@ void P_PlayerInSpecialSector (player_t* player)
   }
   else //jff 3/14/98 handle extended sector types for secrets and damage
   {
-    switch ((sector->special&DAMAGE_MASK)>>DAMAGE_SHIFT)
-    {
-      case 0: // no damage
-        break;
-      case 1: // 2/5 damage per 31 ticks
-        if (!player->powers[pw_ironfeet])
-          if (!(leveltime&0x1f))
-            P_DamageMobj (player->mo, NULL, NULL, 5);
-        break;
-      case 2: // 5/10 damage per 31 ticks
-        if (!player->powers[pw_ironfeet])
-          if (!(leveltime&0x1f))
-            P_DamageMobj (player->mo, NULL, NULL, 10);
-        break;
-      case 3: // 10/20 damage per 31 ticks
-        if (!player->powers[pw_ironfeet]
-            || (P_Random(pr_slimehurt)<5))  // take damage even with suit
-        {
-          if (!(leveltime&0x1f))
-            P_DamageMobj (player->mo, NULL, NULL, 20);
-        }
-        break;
-    }
+      if (mbf21 && sector->special&ALT_DAMAGE_MASK) {
+          int i;
+          switch ((sector->special&DAMAGE_MASK)>>DAMAGE_SHIFT)
+          {
+              case 0: // Kills a player unless they have a rad suit or invulnerability
+                  if(!player->powers[pw_ironfeet] && !player->powers[pw_invulnerability])
+                      P_DamageMobj (player->mo, NULL, NULL, 10000);
+                  break;
+              case 1: // Kills a player
+                  P_DamageMobj (player->mo, NULL, NULL, 10000);
+                  break;
+              case 2: // Kills all players and exits the map (normal exit)
+                  for (i = 0; i<MAXPLAYERS; i++) {
+                      if (playeringame[i]) {
+                          P_DamageMobj (players[i].mo, NULL, NULL, 10000);
+                      }
+                  }
+                  G_ExitLevel();
+                  break;
+              case 3: // Kills all players and exits the map (secret exit)
+                  for (i = 0; i<MAXPLAYERS; i++) {
+                      if (playeringame[i]) {
+                          P_DamageMobj (players[i].mo, NULL, NULL, 10000);
+                      }
+                  }
+                  G_SecretExitLevel();
+                  break;
+          }
+      } else {
+          switch ((sector->special&DAMAGE_MASK)>>DAMAGE_SHIFT)
+          {
+              case 0: // no damage
+                  break;
+              case 1: // 2/5 damage per 31 ticks
+                  if (!player->powers[pw_ironfeet])
+                      if (!(leveltime&0x1f))
+                          P_DamageMobj (player->mo, NULL, NULL, 5);
+                  break;
+              case 2: // 5/10 damage per 31 ticks
+                  if (!player->powers[pw_ironfeet])
+                      if (!(leveltime&0x1f))
+                          P_DamageMobj (player->mo, NULL, NULL, 10);
+                  break;
+              case 3: // 10/20 damage per 31 ticks
+                  if (!player->powers[pw_ironfeet]
+                          || (P_Random(pr_slimehurt)<5))  // take damage even with suit
+                  {
+                      if (!(leveltime&0x1f))
+                          P_DamageMobj (player->mo, NULL, NULL, 20);
+                  }
+                  break;
+          }
+      }
+
     if (sector->special&SECRET_MASK)
     {
         dboolean allsecrets = false;

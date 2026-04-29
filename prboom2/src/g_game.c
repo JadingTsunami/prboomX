@@ -2147,6 +2147,7 @@ int G_GetNamedComplevel (const char *arg)
     {4, "plutonia"},
     {9, "boom"},
     {11, "mbf"},
+    {21, "mbf21"},
   };
 
   // choose the complevel based on the IWAD
