@@ -142,6 +142,7 @@ typedef enum {
   prboom_4_compatibility,                /* PrBoom 2.3.x */
   prboom_5_compatibility,                /* PrBoom 2.4.0 */
   prboom_6_compatibility,                /* Latest PrBoom */
+  mbf21_compatibility = 21,
   MAX_COMPATIBILITY_LEVEL,               /* Must be last entry */
   /* Aliases follow */
   boom_compatibility = boom_201_compatibility, /* Alias used by G_Compatibility */

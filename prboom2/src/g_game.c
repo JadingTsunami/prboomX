@@ -2066,7 +2066,7 @@ const char * comp_lev_str[MAX_COMPATIBILITY_LEVEL] =
 { "Doom v1.2", "Doom v1.666", "Doom/Doom2 v1.9", "Ultimate Doom/Doom95", "Final Doom",
   "early DosDoom", "TASDoom", "\"boom compatibility\"", "boom v2.01", "boom v2.02", "lxdoom v1.3.2+",
   "MBF", "PrBoom 2.03beta", "PrBoom v2.1.0-2.1.1", "PrBoom v2.1.2-v2.2.6",
-  "PrBoom v2.3.x", "PrBoom 2.4.0", "Current PrBoom"  };
+  "PrBoom v2.3.x", "PrBoom 2.4.0", "Current PrBoom", "", "", "", "MBF21" };
 
 // comp_options_by_version removed - see G_Compatibility
 
@@ -2096,6 +2096,7 @@ static const struct {
   ,{ boom_202_compatibility, "PrBoom %d", 109}
   ,{ lxdoom_1_compatibility, "PrBoom %d", 110}
   ,{ mbf_compatibility, "PrBoom %d", 111}
+  ,{ mbf21_compatibility, "PrBoom %d", 121}
   ,{ prboom_2_compatibility, "PrBoom %d", 113}
 };
 
@@ -3490,6 +3491,7 @@ void G_BeginRecording (void)
       unsigned char v = 0;
       switch(compatibility_level) {
         case mbf_compatibility: v = 203; break; // e6y: Bug in MBF compatibility mode fixed
+        case mbf21_compatibility: v = 221; longtics = 1; break;
         case prboom_2_compatibility: v = 210; break;
         case prboom_3_compatibility: v = 211; break;
         case prboom_4_compatibility: v = 212; break;
@@ -3997,7 +3999,8 @@ const byte* G_ReadDemoHeaderEx(const byte *demo_p, size_t size, unsigned int par
   // BOOM's demoversion starts from 200
   if (!((demover >=   0  && demover <=   4) ||
         (demover >= 104  && demover <= 111) ||
-        (demover >= 200  && demover <= 214)))
+        (demover >= 200  && demover <= 214) ||
+        (demover == 221)))
   {
     I_Error("G_ReadDemoHeader: Unknown demo format %d.", demover);
   }
@@ -4146,6 +4149,10 @@ const byte* G_ReadDemoHeaderEx(const byte *demo_p, size_t size, unsigned int par
 	compatibility_level = prboom_6_compatibility;
         longtics = 1;
 	demo_p++;
+    break;
+      case 221:
+    compatibility_level = mbf21_compatibility;
+    longtics = 1;
 	break;
       }
       //e6y: check for overrun
@@ -4595,6 +4602,8 @@ static int G_GetWADCompatibilityLevel()
             resolved_complevel = 9;
         } else if (size == 3 && !strncasecmp(p, "mbf", 3)) {
             resolved_complevel = 11;
+        } else if (size == 5 && !strncasecmp(p, "mbf21", 5)) {
+            resolved_complevel = 21;
         }
         W_UnlockLumpNum(lumpnum);
     }
