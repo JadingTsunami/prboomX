@@ -3027,6 +3027,27 @@ static void P_SpawnScrollers(void)
         {
           register int s;
 
+        case 1026:
+        case 1025:
+        case 1024:
+          if (mbf21_features) {
+              accel = (special == 1026 ? 1 : 0);
+              control = (special != 1024 ? sides[*l->sidenum].sector->iSectorID : -1);
+              dx = -(sides[*l->sidenum].textureoffset) >> 3;
+              dy =  (sides[*l->sidenum].rowoffset) >> 3;
+              if (l->tag == 0 && comperr(comperr_zerotag))
+              {
+                  // jds: not defined behavior; match legacy scroller behavior
+                  Add_WallScroller(dx, dy, l, control, accel);
+              }
+              else
+              {
+                  for (s=-1; (s = P_FindLineFromLineTag(l,s)) >= 0;)
+                      if (s != i)
+                          Add_Scroller(sc_side, dx, dy, control, (lines+s)->sidenum[0], accel);
+              }
+          }
+          break;
         case 250:   // scroll effect ceiling
           for (s=-1; (s = P_FindSectorFromLineTag(l,s)) >= 0;)
             Add_Scroller(sc_ceiling, -dx, dy, control, s, accel);
