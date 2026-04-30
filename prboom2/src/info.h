@@ -38,6 +38,14 @@
 
 /* Needed for action function pointer handling. */
 #include "d_think.h"
+#include "m_fixed.h"
+
+// jds - mbf21 defaults for new mobjinfo fields
+#define MBF21_INFIGHTING_GROUP_DEFAULT (-1)
+#define MBF21_PROJECTILE_GROUP_DEFAULT (0)
+#define MBF21_SPLASH_GROUP_DEFAULT (-1)
+#define MBF21_FAST_SPEED_DEFAULT (-1)
+
 
 /********************************************************************
  * Sprite name enumeration - must match info.c                      *
@@ -1544,6 +1552,16 @@ typedef struct
            back to life. */
   mobjtype_t droppeditem; /* ferk: Mobj to drop after death */
   int bloodcolor; /* [FG] colored blood and gibs */
+
+  // jds - mbf21
+  int infightinggroup;
+  int projectilegroup;
+  int splashgroup;
+  int mbf21bits;
+  int ripsound;
+  int fastspeed;
+  fixed_t meleerange;
+
 } mobjinfo_t;
 
 /* See p_mobj_h for addition more technical info */

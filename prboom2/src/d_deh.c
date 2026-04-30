@@ -50,6 +50,7 @@
 #include "m_argv.h"
 #include "m_misc.h"
 #include "e6y.h"//e6y
+#include "p_map.h"
 
 // CPhipps - modify to use logical output routine
 #include "lprintf.h"
@@ -1124,6 +1125,13 @@ static const char *deh_mobjinfo[DEH_MOBJINFOMAX] =
   "Respawn frame",       // .raisestate
   "Dropped item",        // .droppeditem
   "Blood color",         // .bloodcolor
+  "Infighting group",    // .infightinggroup
+  "Projectile group",    // .profectilengroup
+  "Splash group",        // .splashgroup
+  "MBF21 Bits",          // .mbf21bits
+  "Rip sound",           // .ripsound
+  "Fast speed",          // .fastspeed
+  "Melee range",         // .meleerange
 };
 
 // Strings that are used to indicate flags ("Bits" in mobjinfo)
@@ -1489,6 +1497,15 @@ void D_BuildBEXTables(void)
       default:
       mobjinfo[i].bloodcolor = 0; // Red (normal)
     }
+
+    // jds - mbf21 initialization
+    mobjinfo[i].infightinggroup = MBF21_INFIGHTING_GROUP_DEFAULT;
+    mobjinfo[i].projectilegroup = MBF21_PROJECTILE_GROUP_DEFAULT;
+    mobjinfo[i].splashgroup = MBF21_SPLASH_GROUP_DEFAULT;
+    mobjinfo[i].mbf21bits = 0;
+    mobjinfo[i].ripsound = sfx_None;
+    mobjinfo[i].fastspeed = MBF21_FAST_SPEED_DEFAULT;
+    mobjinfo[i].meleerange = MELEERANGE;
   }
 }
 
@@ -1921,6 +1938,43 @@ static void setMobjInfoValue(int mobjInfoIndex, int keyIndex, uint_64_t value) {
       break;
     case 24: mi->droppeditem = (int)(value-1); return; // make it base zero (deh is 1-based)
     case 25: mi->bloodcolor = (int)value; return;
+    // mbf21
+    case 26:
+     // infightinggroup;
+     mi->infightinggroup = (int)(value);
+     if (mi->infightinggroup < 0) {
+	    I_Error("DeHackEd Error: Infighting groups must be non-negative.");
+     }
+     return;
+    case 27:
+  // projectilegroup;
+     mi->projectilegroup = (int)(value);
+     // need to increment by 1 to offset from default (0)
+     if (mi->projectilegroup >= 0)
+         mi->projectilegroup++;
+     return;
+    case 28:
+  // splashgroup;
+     mi->splashgroup = (int)(value);
+     if (mi->splashgroup < 0) {
+	    I_Error("DeHackEd Error: Splash groups must be non-negative.");
+     }
+     return;
+    case 29:
+  // mbf21bits; not handled here
+     return;
+    case 30:
+  // ripsound;
+     mi->ripsound = (int)(value);
+     return;
+    case 31:
+  // fastspeed;
+     mi->fastspeed = (int)(value);
+     return;
+    case 32:
+  // meleerange;
+     mi->meleerange = (int)(value);
+     return;
     default: return;
   }
 }
