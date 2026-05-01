@@ -1942,6 +1942,16 @@ dboolean PIT_RadiusAttack (mobj_t* thing)
   // Boss spider and cyborg
   // take no damage from concussion.
 
+  // jds - mbf21 splash damage groups
+  // if source and target are in the same splash group,
+  // then don't apply any splash damage
+  if (mbf21_features &&
+          bombspot &&
+          mobjinfo[thing->type].splashgroup != MBF21_SPLASH_GROUP_DEFAULT &&
+          mobjinfo[thing->type].splashgroup == mobjinfo[bombspot->type].splashgroup) {
+      return true;
+  }
+
   // killough 8/10/98: allow grenades to hurt anyone, unless
   // fired by Cyberdemons, in which case it won't hurt Cybers.
 
