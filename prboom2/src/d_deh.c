@@ -1194,6 +1194,30 @@ static const struct deh_mobjflags_s deh_mobjflags[] = {
   {"FRIEND",       MF_FRIEND},       // a friend of the player(s) (MBF)
 };
 
+#define DEH_MBF21_MOBJFLAGMAX (sizeof deh_mobjflags_mbf21/sizeof*deh_mobjflags_mbf21)
+static const struct deh_mobjflags_s deh_mobjflags_mbf21[] = {
+    {"LOGRAV",         MF2_LOGRAV}, 	        // Lower gravity (1/8)
+    {"SHORTMRANGE",    MF2_SHORTMRANGE}, 	    // Short missile range (archvile)
+    {"DMGIGNORED",     MF2_DMGIGNORED}, 	    // Other things ignore its attacks (archvile)
+    {"NORADIUSDMG",    MF2_NORADIUSDMG}, 	    // Doesn't take splash damage (cyberdemon,                       mastermind)
+    {"FORCERADIUSDMG", MF2_FORCERADIUSDMG}, 	// Thing causes splash damage even if the target shouldn't
+    {"HIGHERMPROB",    MF2_HIGHERMPROB}, 	    // Higher missile attack probability (cyberdemon)
+    {"RANGEHALF",      MF2_RANGEHALF}, 	        // Use half distance for missile attack probability (cyberdemon, mastermind, revenant, lost soul)
+    {"NOTHRESHOLD",    MF2_NOTHRESHOLD}, 	    // Has no targeting threshold (archvile)
+    {"LONGMELEE",      MF2_LONGMELEE}, 	        // Has long melee range (revenant)
+    {"BOSS",           MF2_BOSS}, 	            // Full volume see / death sound & splash immunity (from heretic)
+    {"MAP07BOSS1",     MF2_MAP07BOSS1}, 	    // Tag 666 "boss" on doom 2 map 7 (mancubus)
+    {"MAP07BOSS2",     MF2_MAP07BOSS2}, 	    // Tag 667 "boss" on doom 2 map 7 (arachnotron)
+    {"E1M8BOSS",       MF2_E1M8BOSS}, 	        // E1M8 boss (baron)
+    {"E2M8BOSS",       MF2_E2M8BOSS}, 	        // E2M8 boss (cyberdemon)
+    {"E3M8BOSS",       MF2_E3M8BOSS}, 	        // E3M8 boss (mastermind)
+    {"E4M6BOSS",       MF2_E4M6BOSS}, 	        // E4M6 boss (cyberdemon)
+    {"E4M8BOSS",       MF2_E4M8BOSS}, 	        // E4M8 boss (mastermind)
+    {"RIP",            MF2_RIP}, 	            // Ripper projectile (does not disappear on impact)
+    {"FULLVOLSOUNDS",  MF2_FULLVOLSOUNDS}, 	    // Full volume see / death sounds (cyberdemon,                   mastermind)
+    {NULL,             0}
+};
+
 // STATE - Dehacked block name = "Frame" and "Pointer"
 // Usage: Frame nn
 // Usage: Pointer nn (Frame nn)
@@ -2041,7 +2065,33 @@ static void deh_procThing(DEHFILE *fpin, FILE* fpout, char *line)
       for (ix=0; ix<DEH_MOBJINFOMAX; ix++) {
         if (deh_strcasecmp(key,deh_mobjinfo[ix])) continue;
         
-        if (deh_strcasecmp(key,"Bits")) {
+        // jds - mbf21 bits handling
+        if (deh_strcasecmp(key,"MBF21 Bits") == 0) {
+            if (bGetData != 1) {
+                // mnemonics
+                value = 0;
+                for (;(strval = strtok(strval,deh_getBitsDelims())); strval = NULL) {
+                    size_t iy;
+                    for (iy=0; iy < DEH_MBF21_MOBJFLAGMAX; iy++) {
+                        if (deh_strcasecmp(strval,deh_mobjflags_mbf21[iy].name)) continue;
+                        if (fpout) {
+                            fprintf(fpout, 
+                                    "ORed value 0x%08lX%08lX %s\n",
+                                    (unsigned long)(deh_mobjflags_mbf21[iy].value>>32) & 0xffffffff, 
+                                    (unsigned long)deh_mobjflags_mbf21[iy].value & 0xffffffff, strval
+                                   );
+                        }
+                        value |= deh_mobjflags_mbf21[iy].value;
+                        break;
+                    }
+                    if (iy >= DEH_MBF21_MOBJFLAGMAX && fpout) {
+                        fprintf(fpout, "Could not find bit mnemonic %s\n", strval);
+                    }
+                }
+            }
+            mobjinfo[indexnum].mbf21bits = value;
+            if (fpout) fprintf(fpout,"MBF21 bits set -- %x\n", mobjinfo[indexnum].mbf21bits);
+        } else if (deh_strcasecmp(key,"Bits")) {
           // standard value set
           
           // The old code here was the cause of a DEH-related bug in prboom.

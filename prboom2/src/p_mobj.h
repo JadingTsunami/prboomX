@@ -230,6 +230,29 @@
 // [FG] colored blood and gibs
 #define MF_COLOREDBLOOD    LONGLONG(0x0000040000000000)
 
+// jds - mbf21 stuff
+// from spec:
+// https://github.com/kraflab/mbf21/blob/master/docs/spec.md
+#define MF2_LOGRAV         	0x00001
+#define MF2_SHORTMRANGE    	0x00002
+#define MF2_DMGIGNORED     	0x00004
+#define MF2_NORADIUSDMG    	0x00008
+#define MF2_FORCERADIUSDMG 	0x00010
+#define MF2_HIGHERMPROB    	0x00020
+#define MF2_RANGEHALF      	0x00040
+#define MF2_NOTHRESHOLD    	0x00080
+#define MF2_LONGMELEE      	0x00100
+#define MF2_BOSS           	0x00200
+#define MF2_MAP07BOSS1     	0x00400
+#define MF2_MAP07BOSS2     	0x00800
+#define MF2_E1M8BOSS       	0x01000
+#define MF2_E2M8BOSS       	0x02000
+#define MF2_E3M8BOSS       	0x04000
+#define MF2_E4M6BOSS       	0x08000
+#define MF2_E4M8BOSS       	0x10000
+#define MF2_RIP            	0x20000
+#define MF2_FULLVOLSOUNDS  	0x40000
+
 #define ALIVE(thing) ((thing->health > 0) && ((thing->flags & (MF_COUNTKILL | MF_CORPSE | MF_RESSURECTED)) == MF_COUNTKILL))
 
 // killough 9/15/98: Same, but internal flags, not intended for .deh
