@@ -1557,7 +1557,7 @@ typedef struct
   int infightinggroup;
   int projectilegroup;
   int splashgroup;
-  int mbf21bits;
+  int mbf21flags;
   int ripsound;
   int fastspeed;
   fixed_t meleerange;

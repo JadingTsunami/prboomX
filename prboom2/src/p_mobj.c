@@ -490,7 +490,7 @@ static void P_ZMovement (mobj_t* mo)
       }
     } else {
       if (!(mo->flags & MF_NOGRAVITY))      /* free-fall under gravity */
-        mo->momz -= mo->info->mass*(GRAVITY/256);
+        mo->momz -= (mbf21_features && (mobjinfo[mo->type].mbf21flags & MF2_LOGRAV)) ? mo->info->mass*((GRAVITY >> 3)/256): mo->info->mass*(GRAVITY/256);
 
       if (mo->flags & MF_FLOAT && sentient(mo)) goto floater;
       return;
@@ -635,7 +635,9 @@ floater:
       }
     }
   else // still above the floor                                     // phares
-    if (mo->type == MT_GIBDTH && !demorecording && !demoplayback)
+    if ((mo->type == MT_GIBDTH && !demorecording && !demoplayback) ||
+        (mbf21_features && (mobjinfo[mo->type].mbf21flags & MF2_LOGRAV))
+       )
     { // if (mo->flags & MF_LOGRAV)
       // alternate gravity (MF2_LOGRAV from Heretic)
       if (mo->momz == 0)

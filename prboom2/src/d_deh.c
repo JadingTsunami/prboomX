@@ -1128,7 +1128,7 @@ static const char *deh_mobjinfo[DEH_MOBJINFOMAX] =
   "Infighting group",    // .infightinggroup
   "Projectile group",    // .profectilengroup
   "Splash group",        // .splashgroup
-  "MBF21 Bits",          // .mbf21bits
+  "MBF21 Bits",          // .mbf21flags
   "Rip sound",           // .ripsound
   "Fast speed",          // .fastspeed
   "Melee range",         // .meleerange
@@ -1526,7 +1526,7 @@ void D_BuildBEXTables(void)
     mobjinfo[i].infightinggroup = MBF21_INFIGHTING_GROUP_DEFAULT;
     mobjinfo[i].projectilegroup = MBF21_PROJECTILE_GROUP_DEFAULT;
     mobjinfo[i].splashgroup = MBF21_SPLASH_GROUP_DEFAULT;
-    mobjinfo[i].mbf21bits = 0;
+    mobjinfo[i].mbf21flags = 0;
     mobjinfo[i].ripsound = sfx_None;
     mobjinfo[i].fastspeed = MBF21_FAST_SPEED_DEFAULT;
     mobjinfo[i].meleerange = MELEERANGE;
@@ -1985,7 +1985,7 @@ static void setMobjInfoValue(int mobjInfoIndex, int keyIndex, uint_64_t value) {
      }
      return;
     case 29:
-  // mbf21bits; not handled here
+  // mbf21flags; not handled here
      return;
     case 30:
   // ripsound;
@@ -2089,8 +2089,8 @@ static void deh_procThing(DEHFILE *fpin, FILE* fpout, char *line)
                     }
                 }
             }
-            mobjinfo[indexnum].mbf21bits = value;
-            if (fpout) fprintf(fpout,"MBF21 bits set -- %x\n", mobjinfo[indexnum].mbf21bits);
+            mobjinfo[indexnum].mbf21flags = value;
+            if (fpout) fprintf(fpout,"MBF21 bits set -- %x\n", mobjinfo[indexnum].mbf21flags);
         } else if (deh_strcasecmp(key,"Bits")) {
           // standard value set
           
