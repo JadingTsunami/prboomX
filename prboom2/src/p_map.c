@@ -605,7 +605,23 @@ static dboolean PIT_CheckThing(mobj_t *thing) // killough 3/26/98: make static
       if (tmthing->z+tmthing->height < thing->z)
   return true;    // underneath
 
-      if (tmthing->target && (tmthing->target->type == thing->type ||
+      // jds - mbf21 projectile grouping
+      if (mbf21_features &&
+              tmthing->target &&
+              mobjinfo[thing->type].projectilegroup != MBF21_PROJECTILE_GROUP_DEFAULT
+         ) {
+          if (thing == tmthing->target) // don't hurt yourself
+              return true;
+          // thing was assigned to a non-default projectile group,
+          // check for projectile immunity
+          if (mobjinfo[thing->type].projectilegroup > 0 &&
+              (mobjinfo[tmthing->target->type].projectilegroup ==
+              mobjinfo[thing->type].projectilegroup)) {
+              // this has mbf21-enabled group immunity
+              // stop tracking and do not do any damage
+              return false;
+          } // if negative, NO immunity, explode and do damage
+      } else if (tmthing->target && (tmthing->target->type == thing->type ||
     (tmthing->target->type == MT_KNIGHT && thing->type == MT_BRUISER)||
     (tmthing->target->type == MT_BRUISER && thing->type == MT_KNIGHT)))
       {
