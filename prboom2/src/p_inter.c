@@ -1078,7 +1078,7 @@ void P_DamageMobj(mobj_t *target,mobj_t *inflictor, mobj_t *source, int damage)
   //e6y: Monsters could commit suicide in Doom v1.2 if they damaged themselves by exploding a barrel
   if (source && (source != target || compatibility_level == doom_12_compatibility) &&
       (source->type != MT_VILE) &&
-      (!target->threshold || target->type == MT_VILE) &&
+      (!target->threshold || target->type == MT_VILE || (mbf21_features && (target->mbf21flags & MF2_NOTHRESHOLD))) &&
       ((source->flags ^ target->flags) & MF_FRIEND || monster_infighting || !mbf_features) &&
        !(mbf21_features &&
         (mobjinfo[source->type].infightinggroup != MBF21_INFIGHTING_GROUP_DEFAULT) &&

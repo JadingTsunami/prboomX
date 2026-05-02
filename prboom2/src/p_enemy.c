@@ -1121,7 +1121,9 @@ void A_Look(mobj_t *actor)
           sound = actor->info->seesound;
           break;
         }
-      if (actor->type==MT_SPIDER || actor->type == MT_CYBORG)
+      if (actor->type==MT_SPIDER || actor->type == MT_CYBORG ||
+              (mbf21_features && 
+               (actor->mbf21flags & (MF2_BOSS | MF2_FULLVOLSOUNDS))))
         S_StartSound(NULL, sound);          // full volume
       else
       {
@@ -2158,7 +2160,8 @@ void A_Scream(mobj_t *actor)
     }
 
   // Check for bosses.
-  if (actor->type==MT_SPIDER || actor->type == MT_CYBORG)
+  if (actor->type == MT_SPIDER || actor->type == MT_CYBORG ||
+      (mbf21_features && (actor->mbf21flags & (MF2_BOSS | MF2_FULLVOLSOUNDS))))
     S_StartSound(NULL, sound); // full volume
   else
     S_StartSound(actor, sound);
