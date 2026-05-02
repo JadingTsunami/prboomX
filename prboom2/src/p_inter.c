@@ -1083,7 +1083,8 @@ void P_DamageMobj(mobj_t *target,mobj_t *inflictor, mobj_t *source, int damage)
        !(mbf21_features &&
         (mobjinfo[source->type].infightinggroup != MBF21_INFIGHTING_GROUP_DEFAULT) &&
         (mobjinfo[source->type].infightinggroup == mobjinfo[target->type].infightinggroup)
-       )
+       ) &&
+       !(mbf21_features && source->mbf21flags & MF2_DMGIGNORED)
      )
     {
       /* if not intent on another player, chase after this one

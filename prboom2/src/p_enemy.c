@@ -225,7 +225,7 @@ static dboolean P_CheckMissileRange(mobj_t *actor)
 
   dist >>= FRACBITS;
 
-  if (actor->type == MT_VILE)
+  if (actor->type == MT_VILE || (mbf21_features && (actor->mbf21flags & MF2_SHORTMRANGE)))
     if (dist > 14*64)
       return false;     // too far away
 
