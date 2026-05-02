@@ -1526,7 +1526,36 @@ void D_BuildBEXTables(void)
     mobjinfo[i].infightinggroup = MBF21_INFIGHTING_GROUP_DEFAULT;
     mobjinfo[i].projectilegroup = MBF21_PROJECTILE_GROUP_DEFAULT;
     mobjinfo[i].splashgroup = MBF21_SPLASH_GROUP_DEFAULT;
-    mobjinfo[i].mbf21flags = 0;
+    switch (i)
+    {
+        case MT_VILE:
+            mobjinfo[i].mbf21flags = MF2_SHORTMRANGE | MF2_DMGIGNORED | MF2_NOTHRESHOLD;
+            break;
+        case MT_BRUISER:
+            mobjinfo[i].mbf21flags = MF2_E1M8BOSS;
+            break;
+        case MT_CYBORG:
+            mobjinfo[i].mbf21flags = MF2_NORADIUSDMG | MF2_HIGHERMPROB | MF2_RANGEHALF | MF2_E2M8BOSS | MF2_E4M6BOSS | MF2_FULLVOLSOUNDS;
+            break;
+        case MT_SPIDER:
+            mobjinfo[i].mbf21flags = MF2_NORADIUSDMG | MF2_RANGEHALF | MF2_E3M8BOSS | MF2_E4M8BOSS | MF2_FULLVOLSOUNDS;
+            break;
+        case MT_SKULL:
+            mobjinfo[i].mbf21flags = MF2_RANGEHALF;
+            break;
+        case MT_FATSO:
+            mobjinfo[i].mbf21flags = MF2_MAP07BOSS1;
+            break;
+        case MT_BABY:
+            mobjinfo[i].mbf21flags = MF2_MAP07BOSS2;
+            break;
+        case MT_UNDEAD:
+            mobjinfo[i].mbf21flags = MF2_LONGMELEE | MF2_RANGEHALF;
+            break;
+        default:
+            mobjinfo[i].mbf21flags = 0;
+            break;
+    }
     mobjinfo[i].ripsound = sfx_None;
     mobjinfo[i].fastspeed = MBF21_FAST_SPEED_DEFAULT;
     mobjinfo[i].meleerange = MELEERANGE;

@@ -1960,12 +1960,8 @@ dboolean PIT_RadiusAttack (mobj_t* thing)
           return true;
       }
   // jds - mbf21 flags for splash immunity / forcing ("BOSS" flag grants splash immunity)
-  } else if (mbf21_features &&
-            (thing->mbf21flags & (MF2_NORADIUSDMG | MF2_BOSS)) &&
+  } else if ((thing->mbf21flags & (MF2_NORADIUSDMG | MF2_BOSS)) &&
             !(thing->mbf21flags & (MF2_FORCERADIUSDMG))) {
-      return true;
-  // Cyberdemons and Spider Masterminds are splash immune by default
-  } else if (thing->type == MT_CYBORG || thing->type == MT_SPIDER) {
       return true;
   }
 

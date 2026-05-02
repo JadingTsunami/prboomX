@@ -225,29 +225,24 @@ static dboolean P_CheckMissileRange(mobj_t *actor)
 
   dist >>= FRACBITS;
 
-  if (actor->type == MT_VILE || (mbf21_features && (actor->mbf21flags & MF2_SHORTMRANGE)))
+  if (actor->mbf21flags & MF2_SHORTMRANGE)
     if (dist > 14*64)
       return false;     // too far away
 
 
-  if (actor->type == MT_UNDEAD ||
-          (mbf21_features && (actor->mbf21flags & MF2_LONGMELEE)))
+  if (actor->mbf21flags & MF2_LONGMELEE)
     {
       if (dist < 196)
         return false;   // close for fist attack
     }
 
-  if (actor->type == MT_CYBORG ||
-      actor->type == MT_SPIDER ||
-      actor->type == MT_SKULL  ||
-      actor->type == MT_UNDEAD ||
-      (mbf21_features && (actor->mbf21flags & MF2_RANGEHALF)))
+  if (actor->mbf21flags & MF2_RANGEHALF)
     dist >>= 1;
 
   if (dist > 200)
     dist = 200;
 
-  if ((actor->type == MT_CYBORG || ((mbf21_features && (actor->mbf21flags & MF2_HIGHERMPROB)))) && dist > 160)
+  if ((actor->mbf21flags & MF2_HIGHERMPROB) && dist > 160)
     dist = 160;
 
   if (P_Random(pr_missrange) < dist)
@@ -1121,9 +1116,7 @@ void A_Look(mobj_t *actor)
           sound = actor->info->seesound;
           break;
         }
-      if (actor->type==MT_SPIDER || actor->type == MT_CYBORG ||
-              (mbf21_features && 
-               (actor->mbf21flags & (MF2_BOSS | MF2_FULLVOLSOUNDS))))
+      if (actor->mbf21flags & (MF2_BOSS | MF2_FULLVOLSOUNDS))
         S_StartSound(NULL, sound);          // full volume
       else
       {
@@ -2160,8 +2153,7 @@ void A_Scream(mobj_t *actor)
     }
 
   // Check for bosses.
-  if (actor->type == MT_SPIDER || actor->type == MT_CYBORG ||
-      (mbf21_features && (actor->mbf21flags & (MF2_BOSS | MF2_FULLVOLSOUNDS))))
+  if (actor->mbf21flags & (MF2_BOSS | MF2_FULLVOLSOUNDS))
     S_StartSound(NULL, sound); // full volume
   else
     S_StartSound(actor, sound);
