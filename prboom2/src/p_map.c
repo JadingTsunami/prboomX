@@ -654,6 +654,19 @@ static dboolean PIT_CheckThing(mobj_t *thing) // killough 3/26/98: make static
       if (!(thing->flags & MF_SHOOTABLE))
   return !(thing->flags & MF_SOLID); // didn't do any damage
 
+      // jds - mbf21 rippers
+      if (mbf21_features && (tmthing->mbf21flags & MF2_RIP)) {
+          if (tmthing->info->ripsound)
+              S_StartSound(tmthing, tmthing->info->ripsound);
+
+          damage = ((P_Random(pr_mbf21)&3)+2)*tmthing->info->damage;
+          P_DamageMobj (thing, tmthing, tmthing->target, damage);
+          if (!(thing->flags & MF_NOBLOOD))
+              P_SpawnBlood(tmthing->x, tmthing->y, tmthing->z, damage, thing);
+          numspechit = 0;
+          return true; // keep ripping
+      }
+
       // damage / explode
 
       damage = ((P_Random(pr_damage)%8)+1)*tmthing->info->damage;
