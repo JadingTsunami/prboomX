@@ -1955,10 +1955,19 @@ dboolean PIT_RadiusAttack (mobj_t* thing)
   // killough 8/10/98: allow grenades to hurt anyone, unless
   // fired by Cyberdemons, in which case it won't hurt Cybers.
 
-  if (bombspot->flags & MF_BOUNCES ?
-      thing->type == MT_CYBORG && bombsource->type == MT_CYBORG :
-      thing->type == MT_CYBORG || thing->type == MT_SPIDER)
-    return true;
+  if (bombspot->flags & MF_BOUNCES) {
+      if (thing->type == MT_CYBORG && bombsource->type == MT_CYBORG) {
+          return true;
+      }
+  // jds - mbf21 flags for splash immunity / forcing ("BOSS" flag grants splash immunity)
+  } else if (mbf21_features &&
+            (thing->mbf21flags & (MF2_NORADIUSDMG | MF2_BOSS)) &&
+            !(thing->mbf21flags & (MF2_FORCERADIUSDMG))) {
+      return true;
+  // Cyberdemons and Spider Masterminds are splash immune by default
+  } else if (thing->type == MT_CYBORG || thing->type == MT_SPIDER) {
+      return true;
+  }
 
   dx = D_abs(thing->x - bombspot->x);
   dy = D_abs(thing->y - bombspot->y);

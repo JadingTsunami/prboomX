@@ -230,22 +230,24 @@ static dboolean P_CheckMissileRange(mobj_t *actor)
       return false;     // too far away
 
 
-  if (actor->type == MT_UNDEAD)
+  if (actor->type == MT_UNDEAD ||
+          (mbf21_features && (actor->mbf21flags & MF2_LONGMELEE)))
     {
       if (dist < 196)
         return false;   // close for fist attack
-      dist >>= 1;
     }
 
   if (actor->type == MT_CYBORG ||
       actor->type == MT_SPIDER ||
-      actor->type == MT_SKULL)
+      actor->type == MT_SKULL  ||
+      actor->type == MT_UNDEAD ||
+      (mbf21_features && (actor->mbf21flags & MF2_RANGEHALF)))
     dist >>= 1;
 
   if (dist > 200)
     dist = 200;
 
-  if (actor->type == MT_CYBORG && dist > 160)
+  if ((actor->type == MT_CYBORG || ((mbf21_features && (actor->mbf21flags & MF2_HIGHERMPROB)))) && dist > 160)
     dist = 160;
 
   if (P_Random(pr_missrange) < dist)

@@ -397,7 +397,7 @@ typedef struct mobj_s
 
     fixed_t             bloodcolor; // [FG] renamed from "pad", now used to track the thing's blood color
 
-    uint64_t mbf21flags;
+    uint_64_t mbf21flags;
 
     // SEE WARNING ABOVE ABOUT POINTER FIELDS!!!
 } mobj_t;
