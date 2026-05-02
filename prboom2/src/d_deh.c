@@ -1557,7 +1557,17 @@ void D_BuildBEXTables(void)
             break;
     }
     mobjinfo[i].ripsound = sfx_None;
-    mobjinfo[i].fastspeed = MBF21_FAST_SPEED_DEFAULT;
+    switch (i)
+    {
+        case MT_BRUISERSHOT:
+        case MT_HEADSHOT:
+        case MT_TROOPSHOT:
+            mobjinfo[i].fastspeed = 20*FRACUNIT;
+            break;
+        default:
+            mobjinfo[i].fastspeed = mobjinfo[i].speed;
+            break;
+    }
     mobjinfo[i].meleerange = MELEERANGE;
   }
 }

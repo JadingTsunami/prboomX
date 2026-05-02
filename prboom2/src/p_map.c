@@ -656,7 +656,7 @@ static dboolean PIT_CheckThing(mobj_t *thing) // killough 3/26/98: make static
 
       // jds - mbf21 rippers
       if (mbf21_features && (tmthing->mbf21flags & MF2_RIP)) {
-          if (tmthing->info->ripsound)
+          if (tmthing->info->ripsound != sfx_None)
               S_StartSound(tmthing, tmthing->info->ripsound);
 
           damage = ((P_Random(pr_mbf21)&3)+2)*tmthing->info->damage;

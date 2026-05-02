@@ -2924,18 +2924,22 @@ void G_SetFastParms(int fast_pending)
         for (i=S_SARG_RUN1; i<=S_SARG_PAIN2; i++)
           if (states[i].tics != 1 || demo_compatibility) // killough 4/10/98
             states[i].tics >>= 1;  // don't change 1->0 since it causes cycles
-        mobjinfo[MT_BRUISERSHOT].speed = 20*FRACUNIT;
-        mobjinfo[MT_HEADSHOT].speed = 20*FRACUNIT;
-        mobjinfo[MT_TROOPSHOT].speed = 20*FRACUNIT;
       }
     else
       {
         for (i=S_SARG_RUN1; i<=S_SARG_PAIN2; i++)
           states[i].tics <<= 1;
-        mobjinfo[MT_BRUISERSHOT].speed = 15*FRACUNIT;
-        mobjinfo[MT_HEADSHOT].speed = 10*FRACUNIT;
-        mobjinfo[MT_TROOPSHOT].speed = 10*FRACUNIT;
       }
+
+    for (i = 0; i < NUMMOBJTYPES; i++) {
+        // technically we could always swap, but it
+        // seems wasteful vs. a check-and-swap
+        if (mobjinfo[i].fastspeed != mobjinfo[i].speed) {
+            int tempspeed = mobjinfo[i].speed;
+            mobjinfo[i].speed = mobjinfo[i].fastspeed;
+            mobjinfo[i].fastspeed = tempspeed;
+        }
+    }
   }
 }
 
