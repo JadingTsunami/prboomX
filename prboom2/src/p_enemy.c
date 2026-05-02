@@ -151,7 +151,7 @@ static dboolean P_CheckMeleeRange(mobj_t *actor)
     (P_AproxDistance(pl->x-actor->x, pl->y-actor->y) <
      (compatibility_level == doom_12_compatibility ?
       MELEERANGE :
-      MELEERANGE - 20*FRACUNIT + pl->info->radius)) &&
+      actor->info->meleerange - 20*FRACUNIT + pl->info->radius)) &&
     P_CheckSight(actor, actor->target) &&
     /* melee height check */
     (!C_CvarIsSet("overunder") ||
@@ -696,8 +696,8 @@ static void P_NewChaseDir(mobj_t *actor)
       {   // Live enemy target
         if (monster_backing &&
       actor->info->missilestate && actor->type != MT_SKULL &&
-      ((!target->info->missilestate && dist < MELEERANGE*2) ||
-       (target->player && dist < MELEERANGE*3 &&
+      ((!target->info->missilestate && dist < (actor->info->meleerange)*2) ||
+       (target->player && dist < (actor->info->meleerange)*3 &&
         (target->player->readyweapon == wp_fist ||
          target->player->readyweapon == wp_chainsaw))))
     {       // Back away from melee attacker
@@ -730,7 +730,7 @@ static dboolean P_IsVisible(mobj_t *actor, mobj_t *mo, dboolean allaround)
       angle_t an = R_PointToAngle2(actor->x, actor->y,
            mo->x, mo->y) - actor->angle;
       if (an > ANG90 && an < ANG270 &&
-    P_AproxDistance(mo->x-actor->x, mo->y-actor->y) > MELEERANGE)
+    P_AproxDistance(mo->x-actor->x, mo->y-actor->y) > actor->info->meleerange)
   return false;
     }
   return P_CheckSight(actor, mo);
@@ -1438,6 +1438,7 @@ void A_SargAttack(mobj_t *actor)
   if (compatibility_level == doom_12_compatibility)
   {
     int damage = ((P_Random(pr_sargattack)%10)+1)*4;
+    // jds - maintained old compatibility, did not use mbf21 ranges
     P_LineAttack(actor, actor->angle, MELEERANGE, 0, damage);
   }
   else

@@ -1534,7 +1534,7 @@ void P_SpawnPuff(fixed_t x,fixed_t y,fixed_t z)
 
   // don't make punches spark on the wall
 
-  if (attackrange == MELEERANGE)
+  if (attackrange == mobjinfo[MT_PLAYER].meleerange)
     P_SetMobjState (th, S_PUFF3);
 }
 

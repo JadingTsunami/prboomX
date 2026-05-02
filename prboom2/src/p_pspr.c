@@ -544,11 +544,11 @@ void A_Punch(player_t *player, pspdef_t *psp)
 
   /* killough 8/2/98: make autoaiming prefer enemies */
   if (!mbf_features ||
-      (slope = P_AimLineAttack(player->mo, angle, MELEERANGE, MF_FRIEND),
+      (slope = P_AimLineAttack(player->mo, angle, mobjinfo[MT_PLAYER].meleerange, MF_FRIEND),
        !linetarget))
-    slope = P_AimLineAttack(player->mo, angle, MELEERANGE, 0);
+    slope = P_AimLineAttack(player->mo, angle, mobjinfo[MT_PLAYER].meleerange, 0);
 
-  P_LineAttack(player->mo, angle, MELEERANGE, slope, damage);
+  P_LineAttack(player->mo, angle, mobjinfo[MT_PLAYER].meleerange, slope, damage);
 
   if (!linetarget)
     return;
@@ -583,11 +583,11 @@ void A_Saw(player_t *player, pspdef_t *psp)
   /* Use meleerange + 1 so that the puff doesn't skip the flash
    * killough 8/2/98: make autoaiming prefer enemies */
   if (!mbf_features ||
-      (slope = P_AimLineAttack(player->mo, angle, MELEERANGE+1, MF_FRIEND),
+      (slope = P_AimLineAttack(player->mo, angle, mobjinfo[MT_PLAYER].meleerange+1, MF_FRIEND),
        !linetarget))
-    slope = P_AimLineAttack(player->mo, angle, MELEERANGE+1, 0);
+    slope = P_AimLineAttack(player->mo, angle, mobjinfo[MT_PLAYER].meleerange+1, 0);
 
-  P_LineAttack(player->mo, angle, MELEERANGE+1, slope, damage);
+  P_LineAttack(player->mo, angle, mobjinfo[MT_PLAYER].meleerange+1, slope, damage);
 
   if (!linetarget)
     {
