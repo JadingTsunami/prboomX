@@ -1150,6 +1150,8 @@ struct deh_mobjflags_s {
   uint_64_t value;
 };
 
+typedef struct deh_mobjflags_s deh_weaponflags_s;
+
 // CPhipps - static const
 static const struct deh_mobjflags_s deh_mobjflags[] = {
   {"SPECIAL",      MF_SPECIAL}, // call  P_Specialthing when touched
@@ -1216,6 +1218,19 @@ static const struct deh_mobjflags_s deh_mobjflags_mbf21[] = {
     {"RIP",            MF2_RIP}, 	            // Ripper projectile (does not disappear on impact)
     {"FULLVOLSOUNDS",  MF2_FULLVOLSOUNDS}, 	    // Full volume see / death sounds (cyberdemon,                   mastermind)
     {NULL,             0}
+};
+
+// jds - from spec
+// https://github.com/kraflab/mbf21/blob/master/docs/spec.md
+#define DEH_MBF21_WEAPONFLAGMAX (sizeof deh_weaponflags_mbf21/sizeof*deh_weaponflags_mbf21)
+static const deh_weaponflags_s deh_weaponflags_mbf21[] = {
+    {"NOTHRUST",      WF_NOTHRUST},
+    {"SILENT",        WF_SILENT},
+    {"NOAUTOFIRE",    WF_NOAUTOFIRE},
+    {"FLEEMELEE",     WF_FLEEMELEE},
+    {"AUTOSWITCHFROM",WF_AUTOSWITCHFROM},
+    {"NOAUTOSWITCHTO",WF_NOAUTOSWITCHTO},
+    {NULL,            0}
 };
 
 // STATE - Dehacked block name = "Frame" and "Pointer"
@@ -1296,7 +1311,8 @@ static const char *deh_weapon[] = // CPhipps - static const*
   "Select frame",   // .downstate
   "Bobbing frame",  // .readystate
   "Shooting frame", // .atkstate
-  "Firing frame"    // .flashstate
+  "Firing frame",   // .flashstate
+  "MBF21 Bits"      // .mbf21weaponflags
 };
 
 // CHEATS - Dehacked block name = "Cheat"
@@ -1569,6 +1585,31 @@ void D_BuildBEXTables(void)
             break;
     }
     mobjinfo[i].meleerange = MELEERANGE;
+  }
+
+  // jds - build mbf21 weapon info extra info
+  for (i = 0; i < NUMWEAPONS; i++) {
+      switch (i)
+      {
+          case wp_fist:
+              weaponinfo[i].mbf21weaponflags = (WF_FLEEMELEE | WF_AUTOSWITCHFROM | WF_NOAUTOSWITCHTO);
+              break;
+          case wp_pistol:
+              weaponinfo[i].mbf21weaponflags = (WF_AUTOSWITCHFROM);
+              break;
+          case wp_missile:
+              weaponinfo[i].mbf21weaponflags = (WF_NOAUTOFIRE);
+              break;
+          case wp_bfg:
+              weaponinfo[i].mbf21weaponflags = (WF_NOAUTOFIRE);
+              break;
+          case wp_chainsaw:
+              weaponinfo[i].mbf21weaponflags = (WF_NOTHRUST | WF_FLEEMELEE | WF_NOAUTOSWITCHTO);
+              break;
+          default:
+              weaponinfo[i].mbf21weaponflags = 0;
+              break;
+      }
   }
 }
 
@@ -2129,7 +2170,7 @@ static void deh_procThing(DEHFILE *fpin, FILE* fpout, char *line)
                 }
             }
             mobjinfo[indexnum].mbf21flags = value;
-            if (fpout) fprintf(fpout,"MBF21 bits set -- %x\n", mobjinfo[indexnum].mbf21flags);
+            if (fpout) fprintf(fpout,"MBF21 bits set -- %llx\n", mobjinfo[indexnum].mbf21flags);
         } else if (deh_strcasecmp(key,"Bits")) {
           // standard value set
           
@@ -2491,6 +2532,8 @@ static void deh_procWeapon(DEHFILE *fpin, FILE* fpout, char *line)
   char inbuffer[DEH_BUFFERMAX];
   uint_64_t value;      // All deh values are ints or longs
   int indexnum;
+  int bGetData;
+  char* strval;
 
   strncpy(inbuffer,line,DEH_BUFFERMAX-1);
 
@@ -2507,30 +2550,51 @@ static void deh_procWeapon(DEHFILE *fpin, FILE* fpout, char *line)
       if (!dehfgets(inbuffer, sizeof(inbuffer), fpin)) break;
       lfstrip(inbuffer);
       if (!*inbuffer) break;       // killough 11/98
-      if (!deh_GetData(inbuffer,key,&value,NULL,fpout)) // returns TRUE if ok
+      bGetData = deh_GetData(inbuffer,key,&value,&strval,fpout);
+      if (!bGetData) // returns TRUE if ok
         {
           if (fpout) fprintf(fpout,"Bad data pair in '%s'\n",inbuffer);
           continue;
         }
-      if (!deh_strcasecmp(key,deh_weapon[0]))  // Ammo type
-        weaponinfo[indexnum].ammo = (ammotype_t)value;
-      else
-        if (!deh_strcasecmp(key,deh_weapon[1]))  // Deselect frame
+      if (!deh_strcasecmp(key,deh_weapon[0])) {  // Ammo type
+          weaponinfo[indexnum].ammo = (ammotype_t)value;
+      } else if (!deh_strcasecmp(key,deh_weapon[1])) { // Deselect frame
           weaponinfo[indexnum].upstate = (int)value;
-        else
-          if (!deh_strcasecmp(key,deh_weapon[2]))  // Select frame
-            weaponinfo[indexnum].downstate = (int)value;
-          else
-            if (!deh_strcasecmp(key,deh_weapon[3]))  // Bobbing frame
-              weaponinfo[indexnum].readystate = (int)value;
-            else
-              if (!deh_strcasecmp(key,deh_weapon[4]))  // Shooting frame
-                weaponinfo[indexnum].atkstate = (int)value;
-              else
-                if (!deh_strcasecmp(key,deh_weapon[5]))  // Firing frame
-                  weaponinfo[indexnum].flashstate = (int)value;
-                else
-                  if (fpout) fprintf(fpout,"Invalid weapon string index for '%s'\n",key);
+      } else if (!deh_strcasecmp(key,deh_weapon[2])) { // Select frame
+          weaponinfo[indexnum].downstate = (int)value;
+      } else if (!deh_strcasecmp(key,deh_weapon[3])) { // Bobbing frame
+          weaponinfo[indexnum].readystate = (int)value;
+      } else if (!deh_strcasecmp(key,deh_weapon[4])) { // Shooting frame
+          weaponinfo[indexnum].atkstate = (int)value;
+      } else if (!deh_strcasecmp(key,deh_weapon[5])) { // Firing frame
+          weaponinfo[indexnum].flashstate = (int)value;
+      } else if (!deh_strcasecmp(key,deh_weapon[6])) { // MBF21 Weapon Bits
+            if (bGetData != 1) {
+                // mnemonics
+                value = 0;
+                for (;(strval = strtok(strval,deh_getBitsDelims())); strval = NULL) {
+                    size_t iy;
+                    for (iy=0; iy < DEH_MBF21_WEAPONFLAGMAX; iy++) {
+                        if (deh_strcasecmp(strval,deh_weaponflags_mbf21[iy].name)) continue;
+                        if (fpout) {
+                            fprintf(fpout, 
+                                    "ORed value 0x%08lX %s\n",
+                                    (unsigned long)deh_weaponflags_mbf21[iy].value, strval
+                                   );
+                        }
+                        value |= deh_weaponflags_mbf21[iy].value;
+                        break;
+                    }
+                    if (iy >= DEH_MBF21_WEAPONFLAGMAX && fpout) {
+                        fprintf(fpout, "Could not find bit mnemonic %s\n", strval);
+                    }
+                }
+            }
+            weaponinfo[indexnum].mbf21weaponflags = (int)value;
+            if (fpout) fprintf(fpout,"MBF21 weapon bits set -- %x\n", weaponinfo[indexnum].mbf21weaponflags);
+      } else if (fpout) {
+          fprintf(fpout,"Invalid weapon string index for '%s'\n",key);
+      }
     }
   return;
 }

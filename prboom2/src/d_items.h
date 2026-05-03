@@ -41,6 +41,13 @@
 #pragma interface
 #endif
 
+// jds - mbf21 weapon flags
+#define WF_NOTHRUST           0x001
+#define WF_SILENT             0x002
+#define WF_NOAUTOFIRE         0x004
+#define WF_FLEEMELEE          0x008
+#define WF_AUTOSWITCHFROM     0x010
+#define WF_NOAUTOSWITCHTO     0x020
 
 /* Weapon info: sprite frames, ammunition use. */
 typedef struct
@@ -51,7 +58,8 @@ typedef struct
   int         readystate;
   int         atkstate;
   int         flashstate;
-
+  int         mbf21weaponflags;
+  int         ammopershot;
 } weaponinfo_t;
 
 extern  weaponinfo_t    weaponinfo[NUMWEAPONS+2];
