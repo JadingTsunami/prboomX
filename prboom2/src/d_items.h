@@ -49,6 +49,10 @@
 #define WF_AUTOSWITCHFROM     0x010
 #define WF_NOAUTOSWITCHTO     0x020
 
+// jds - mbf21 ammo per shot must be non-negative,
+// so -1 is a safe "invalid" default value to use
+#define WP_DEFAULT_AMMO_PER_SHOT (-1)
+
 /* Weapon info: sprite frames, ammunition use. */
 typedef struct
 {

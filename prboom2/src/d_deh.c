@@ -1611,6 +1611,7 @@ void D_BuildBEXTables(void)
               weaponinfo[i].mbf21weaponflags = 0;
               break;
       }
+      weaponinfo[i].ammopershot = WP_DEFAULT_AMMO_PER_SHOT;
   }
 }
 
