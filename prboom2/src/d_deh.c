@@ -1312,7 +1312,8 @@ static const char *deh_weapon[] = // CPhipps - static const*
   "Bobbing frame",  // .readystate
   "Shooting frame", // .atkstate
   "Firing frame",   // .flashstate
-  "MBF21 Bits"      // .mbf21weaponflags
+  "MBF21 Bits",     // .mbf21weaponflags
+  "Ammo per shot"   // .ammopershot
 };
 
 // CHEATS - Dehacked block name = "Cheat"
@@ -2592,6 +2593,12 @@ static void deh_procWeapon(DEHFILE *fpin, FILE* fpout, char *line)
             }
             weaponinfo[indexnum].mbf21weaponflags = (int)value;
             if (fpout) fprintf(fpout,"MBF21 weapon bits set -- %x\n", weaponinfo[indexnum].mbf21weaponflags);
+      } else if (!deh_strcasecmp(key,deh_weapon[7])) { // Ammo per shot
+          if ((int)value < 0) {
+              if (fpout) fprintf(fpout,"Invalid ammo per shot (must be non-negative) for '%s'\n",key);
+          } else {
+              weaponinfo[indexnum].ammopershot = (int)value;
+          }
       } else if (fpout) {
           fprintf(fpout,"Invalid weapon string index for '%s'\n",key);
       }
@@ -2829,62 +2836,47 @@ static void deh_procMisc(DEHFILE *fpin, FILE* fpout, char *line) // done
       // Otherwise it's ok
       if (fpout) fprintf(fpout,"Processing Misc item '%s'\n", key);
 
-      if (!deh_strcasecmp(key,deh_misc[0]))  // Initial Health
-        initial_health = (int)value;
-      else
-        if (!deh_strcasecmp(key,deh_misc[1]))  // Initial Bullets
+      if (!deh_strcasecmp(key,deh_misc[0])) { // Initial Health
+          initial_health = (int)value;
+      } else if (!deh_strcasecmp(key,deh_misc[1])) { // Initial Bullets
           initial_bullets = (int)value;
-        else
-          if (!deh_strcasecmp(key,deh_misc[2]))  // Max Health
-            IsDehMaxHealth = true, deh_maxhealth = (int)value; //e6y
-          else
-            if (!deh_strcasecmp(key,deh_misc[3]))  // Max Armor
-              max_armor = (int)value;
-            else
-              if (!deh_strcasecmp(key,deh_misc[4]))  // Green Armor Class
-                green_armor_class = (int)value;
-              else
-                if (!deh_strcasecmp(key,deh_misc[5]))  // Blue Armor Class
-                  blue_armor_class = (int)value;
-                else
-                  if (!deh_strcasecmp(key,deh_misc[6]))  // Max Soulsphere
-                    IsDehMaxSoul = true, deh_max_soul = (int)value; //e6y
-                  else
-                    if (!deh_strcasecmp(key,deh_misc[7]))  // Soulsphere Health
-                      soul_health = (int)value;
-                    else
-                      if (!deh_strcasecmp(key,deh_misc[8]))  // Megasphere Health
-                        IsDehMegaHealth = true, deh_mega_health = (int)value; //e6y
-                      else
-                        if (!deh_strcasecmp(key,deh_misc[9]))  // God Mode Health
-                          god_health = (int)value;
-                        else
-                          if (!deh_strcasecmp(key,deh_misc[10]))  // IDFA Armor
-                            idfa_armor = (int)value;
-                          else
-                            if (!deh_strcasecmp(key,deh_misc[11]))  // IDFA Armor Class
-                              idfa_armor_class = (int)value;
-                            else
-                              if (!deh_strcasecmp(key,deh_misc[12]))  // IDKFA Armor
-                                idkfa_armor = (int)value;
-                              else
-                                if (!deh_strcasecmp(key,deh_misc[13]))  // IDKFA Armor Class
-                                  idkfa_armor_class = (int)value;
-                                else
-                                  if (!deh_strcasecmp(key,deh_misc[14]))  // BFG Cells/Shot
-                                    bfgcells = (int)value;
-                                  else
-                                    if (!deh_strcasecmp(key,deh_misc[15])) { // Monsters Infight
-                                      // e6y: Dehacked support - monsters infight
-                                      if (value == 202) monsters_infight = 0;
-                                      else if (value == 221) monsters_infight = 1;
-                                      else if (fpout) fprintf(fpout,
-                                        "Invalid value for 'Monsters Infight': %i", (int)value);
-
-                                      /* No such switch in DOOM - nop */ //e6y ;
-                                    } else
-                                      if (fpout) fprintf(fpout,
-                                                         "Invalid misc item string index for '%s'\n",key);
+      } else if (!deh_strcasecmp(key,deh_misc[2])) { // Max Health
+          IsDehMaxHealth = true, deh_maxhealth = (int)value; //e6y
+      } else if (!deh_strcasecmp(key,deh_misc[3])) { // Max Armor
+          max_armor = (int)value;
+      } else if (!deh_strcasecmp(key,deh_misc[4])) { // Green Armor Class
+          green_armor_class = (int)value;
+      } else if (!deh_strcasecmp(key,deh_misc[5])) { // Blue Armor Class
+          blue_armor_class = (int)value;
+      } else if (!deh_strcasecmp(key,deh_misc[6])) { // Max Soulsphere
+          IsDehMaxSoul = true, deh_max_soul = (int)value; //e6y
+      } else if (!deh_strcasecmp(key,deh_misc[7])) { // Soulsphere Health
+          soul_health = (int)value;
+      } else if (!deh_strcasecmp(key,deh_misc[8])) { // Megasphere Health
+          IsDehMegaHealth = true, deh_mega_health = (int)value; //e6y
+      } else if (!deh_strcasecmp(key,deh_misc[9])) { // God Mode Health
+          god_health = (int)value;
+      } else if (!deh_strcasecmp(key,deh_misc[10])) { // IDFA Armor
+          idfa_armor = (int)value;
+      } else if (!deh_strcasecmp(key,deh_misc[11])) { // IDFA Armor Class
+          idfa_armor_class = (int)value;
+      } else if (!deh_strcasecmp(key,deh_misc[12])) { // IDKFA Armor
+          idkfa_armor = (int)value;
+      } else if (!deh_strcasecmp(key,deh_misc[13])) { // IDKFA Armor Class
+          idkfa_armor_class = (int)value;
+      } else if (!deh_strcasecmp(key,deh_misc[14])) { // BFG Cells/Shot
+          bfgcells = (int)value;
+          weaponinfo[wp_bfg].ammopershot = bfgcells; // jds - also set BFG Ammo Per Shot per spec
+      } else if (!deh_strcasecmp(key,deh_misc[15])) { // Monsters Infight
+                                                      // e6y: Dehacked support - monsters infight
+          if (value == 202) monsters_infight = 0;
+          else if (value == 221) monsters_infight = 1;
+          else if (fpout) fprintf(fpout,
+                  "Invalid value for 'Monsters Infight': %i", (int)value);
+          /* No such switch in DOOM - nop */ //e6y ;
+      } else {
+          if (fpout) fprintf(fpout, "Invalid misc item string index for '%s'\n",key);
+      }
     }
   return;
 }
