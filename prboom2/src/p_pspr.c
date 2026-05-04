@@ -68,6 +68,8 @@
   #define CHECK_WEAPON_CODEPOINTER(codepointer, player)
 #endif
 
+#define USE_AMMO(amount_to_use) player->ammo[weaponinfo[player->readyweapon].ammo] -= (mbf21_features && (weaponinfo[player->readyweapon].ammopershot != WP_DEFAULT_AMMO_PER_SHOT)) ? weaponinfo[player->readyweapon].ammopershot : amount_to_use
+
 extern void P_Thrust(player_t *, angle_t, fixed_t);
 
 // The following array holds the recoil values         // phares
@@ -262,11 +264,16 @@ dboolean P_CheckAmmo(player_t *player)
   ammotype_t ammo = weaponinfo[player->readyweapon].ammo;
   int count = 1;  // Regular
 
-  if (player->readyweapon == wp_bfg)  // Minimal amount for one shot varies.
-    count = BFGCELLS;
-  else
-    if (player->readyweapon == wp_supershotgun)        // Double barrel.
-      count = 2;
+  if (mbf21_features && (weaponinfo[player->readyweapon].ammopershot != WP_DEFAULT_AMMO_PER_SHOT)) {
+      count = weaponinfo[player->readyweapon].ammopershot;
+  } else {
+      if (player->readyweapon == wp_bfg)  // Minimal amount for one shot varies.
+          count = BFGCELLS;
+      else
+          if (player->readyweapon == wp_supershotgun)        // Double barrel.
+              count = 2;
+  }
+
 
   // Some do not need ammunition anyway.
   // Return if current ammunition sufficient.
@@ -624,8 +631,9 @@ void A_Saw(player_t *player, pspdef_t *psp)
 void A_FireMissile(player_t *player, pspdef_t *psp)
 {
   CHECK_WEAPON_CODEPOINTER("A_FireMissile", player);
+ 
+  USE_AMMO(1);
 
-  player->ammo[weaponinfo[player->readyweapon].ammo]--;
   P_SpawnPlayerMissile(player->mo, MT_ROCKET);
 }
 
@@ -637,7 +645,8 @@ void A_FireBFG(player_t *player, pspdef_t *psp)
 {
   CHECK_WEAPON_CODEPOINTER("A_FireBFG", player);
 
-  player->ammo[weaponinfo[player->readyweapon].ammo] -= BFGCELLS;
+  USE_AMMO(BFGCELLS);
+
   P_SpawnPlayerMissile(player->mo, MT_BFG);
 }
 
@@ -664,7 +673,7 @@ void A_FireOldBFG(player_t *player, pspdef_t *psp)
     P_Thrust(player, ANG180 + player->mo->angle,
     512*recoil_values[wp_plasma]);
 
-  player->ammo[weaponinfo[player->readyweapon].ammo]--;
+  USE_AMMO(1);
 
   player->extralight = 2;
 
@@ -715,7 +724,7 @@ void A_FirePlasma(player_t *player, pspdef_t *psp)
 {
   CHECK_WEAPON_CODEPOINTER("A_FirePlasma", player);
 
-  player->ammo[weaponinfo[player->readyweapon].ammo]--;
+  USE_AMMO(1);
 
   A_FireSomething(player,P_Random(pr_plasma)&1);              // phares
   P_SpawnPlayerMissile(player->mo, MT_PLASMA);
@@ -782,7 +791,7 @@ void A_FirePistol(player_t *player, pspdef_t *psp)
   S_StartSound(player->mo, sfx_pistol);
 
   P_SetMobjState(player->mo, S_PLAY_ATK2);
-  player->ammo[weaponinfo[player->readyweapon].ammo]--;
+  USE_AMMO(1);
 
   A_FireSomething(player,0);                                      // phares
   P_BulletSlope(player->mo);
@@ -802,7 +811,7 @@ void A_FireShotgun(player_t *player, pspdef_t *psp)
   S_StartSound(player->mo, sfx_shotgn);
   P_SetMobjState(player->mo, S_PLAY_ATK2);
 
-  player->ammo[weaponinfo[player->readyweapon].ammo]--;
+  USE_AMMO(1);
 
   A_FireSomething(player,0);                                      // phares
 
@@ -824,7 +833,7 @@ void A_FireShotgun2(player_t *player, pspdef_t *psp)
 
   S_StartSound(player->mo, sfx_dshtgn);
   P_SetMobjState(player->mo, S_PLAY_ATK2);
-  player->ammo[weaponinfo[player->readyweapon].ammo] -= 2;
+  USE_AMMO(2);
 
   A_FireSomething(player,0);                                      // phares
 
@@ -858,7 +867,7 @@ void A_FireCGun(player_t *player, pspdef_t *psp)
     return;
 
   P_SetMobjState(player->mo, S_PLAY_ATK2);
-  player->ammo[weaponinfo[player->readyweapon].ammo]--;
+  USE_AMMO(1);
 
   A_FireSomething(player,psp->state - &states[S_CHAIN1]);           // phares
 
