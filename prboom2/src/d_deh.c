@@ -1250,7 +1250,18 @@ static const char *deh_state[] = // CPhipps - static const*
   // This is set in a separate "Pointer" block from Dehacked
   "Codep Frame",      // pointer to first use of action (actionf_t)
   "Unknown 1",        // .misc1 (long)
-  "Unknown 2"         // .misc2 (long)
+  "Unknown 2",        // .misc2 (long)
+  // MBF21 frame flags
+  "MBF21 Bits",
+  // New MBF21 integer args
+  "Args1",
+  "Args2",
+  "Args3",
+  "Args4",
+  "Args5",
+  "Args6",
+  "Args7",
+  "Args8"
 };
 
 // SFXINFO_STRUCT - Dehacked block name = "Sounds"
@@ -1467,7 +1478,7 @@ char *deh_soundnames[NUMSFX + 1];
 
 void D_BuildBEXTables(void)
 {
-   int i;
+   int i, j;
 
    // moved from ProcessDehFile, then we don't need the static int i
    for (i = 0; i < EXTRASTATES; i++)  // remember what they start as for deh xref
@@ -1484,6 +1495,11 @@ void D_BuildBEXTables(void)
      states[i].misc1 = 0;
      states[i].misc2 = 0;
      deh_codeptr[i] = states[i].action;
+
+     // jds - mbf21 initializers
+     for (j = 0; j < NUM_STATE_ARGS; j++)
+         states[i].stateargs[j] = 0;
+     states[i].mbf21stateflags = 0;
    }
 
    for(i = 0; i < NUMSPRITES; i++)
@@ -1610,6 +1626,11 @@ void D_BuildBEXTables(void)
               break;
       }
       weaponinfo[i].ammopershot = WP_DEFAULT_AMMO_PER_SHOT;
+  }
+
+  // jds - build skill5fast demon state flags
+  for (i=S_SARG_RUN1; i<=S_SARG_PAIN2; i++) {
+      states[i].mbf21stateflags |= STF_SKILL5FAST;
   }
 }
 
@@ -2258,6 +2279,8 @@ static void deh_procFrame(DEHFILE *fpin, FILE* fpout, char *line)
   char inbuffer[DEH_BUFFERMAX];
   uint_64_t value;      // All deh values are ints or longs
   int indexnum;
+  int bGetData;
+  char* strval;
 
   strncpy(inbuffer,line,DEH_BUFFERMAX-1);
 
@@ -2268,59 +2291,76 @@ static void deh_procFrame(DEHFILE *fpin, FILE* fpout, char *line)
     if (fpout) fprintf(fpout,"Bad frame number %d of %d\n",indexnum, NUMSTATES);
 
   while (!dehfeof(fpin) && *inbuffer && (*inbuffer != ' '))
-    {
+  {
       if (!dehfgets(inbuffer, sizeof(inbuffer), fpin)) break;
       lfstrip(inbuffer);
       if (!*inbuffer) break;         // killough 11/98
-      if (!deh_GetData(inbuffer,key,&value,NULL,fpout)) // returns TRUE if ok
-        {
+      bGetData = deh_GetData(inbuffer,key,&value,&strval,fpout);
+      if (!bGetData) // returns TRUE if ok
+      {
           if (fpout) fprintf(fpout,"Bad data pair in '%s'\n",inbuffer);
           continue;
-        }
+      }
+
       if (!deh_strcasecmp(key,deh_state[0]))  // Sprite number
-        {
+      {
           if (fpout) fprintf(fpout," - sprite = %ld\n",(long)value);
           states[indexnum].sprite = (spritenum_t)value;
-        }
-      else
-        if (!deh_strcasecmp(key,deh_state[1]))  // Sprite subnumber
-          {
-            if (fpout) fprintf(fpout," - frame = %ld\n",(long)value);
-            states[indexnum].frame = (long)value; // long
-          }
-        else
-          if (!deh_strcasecmp(key,deh_state[2]))  // Duration
-            {
-              if (fpout) fprintf(fpout," - tics = %ld\n",(long)value);
-              states[indexnum].tics = (long)value; // long
-            }
-          else
-            if (!deh_strcasecmp(key,deh_state[3]))  // Next frame
-              {
-                if (fpout) fprintf(fpout," - nextstate = %ld\n",(long)value);
-                states[indexnum].nextstate = (statenum_t)value;
-              }
-            else
-              if (!deh_strcasecmp(key,deh_state[4]))  // Codep frame (not set in Frame deh block)
-                {
-                  if (fpout) fprintf(fpout," - codep, should not be set in Frame section!\n");
-                  /* nop */ ;
-                }
-              else
-                if (!deh_strcasecmp(key,deh_state[5]))  // Unknown 1
-                  {
-                    if (fpout) fprintf(fpout," - misc1 = %ld\n",(long)value);
-                    states[indexnum].misc1 = (long)value; // long
+      }
+      else if (!deh_strcasecmp(key,deh_state[1]))  // Sprite subnumber
+      {
+          if (fpout) fprintf(fpout," - frame = %ld\n",(long)value);
+          states[indexnum].frame = (long)value; // long
+      }
+      else if (!deh_strcasecmp(key,deh_state[2]))  // Duration
+      {
+          if (fpout) fprintf(fpout," - tics = %ld\n",(long)value);
+          states[indexnum].tics = (long)value; // long
+      }
+      else if (!deh_strcasecmp(key,deh_state[3]))  // Next frame
+      {
+          if (fpout) fprintf(fpout," - nextstate = %ld\n",(long)value);
+          states[indexnum].nextstate = (statenum_t)value;
+      }
+      else if (!deh_strcasecmp(key,deh_state[4]))  // Codep frame (not set in Frame deh block)
+      {
+          if (fpout) fprintf(fpout," - codep, should not be set in Frame section!\n");
+          /* nop */ ;
+      }
+      else if (!deh_strcasecmp(key,deh_state[5]))  // Unknown 1
+      {
+          if (fpout) fprintf(fpout," - misc1 = %ld\n",(long)value);
+          states[indexnum].misc1 = (long)value; // long
+      }
+      else if (!deh_strcasecmp(key,deh_state[6]))  // Unknown 2
+      {
+          if (fpout) fprintf(fpout," - misc2 = %ld\n",(long)value);
+          states[indexnum].misc2 = (long)value; // long
+      }
+      else if (!deh_strcasecmp(key,deh_state[7]))  // MBF21 bits
+      {
+          if (bGetData != 1) {
+              // mnemonics
+              value = 0;
+              // jds - only 1 bit field defined. will externalized if/when
+              // more get defined later.
+              for (;(strval = strtok(strval,deh_getBitsDelims())); strval = NULL) {
+                  if (deh_strcasecmp(strval,"SKILL5FAST")) continue;
+                  if (fpout) {
+                      fprintf(fpout, 
+                              "ORed value 0x%08lX %s\n",
+                              (unsigned long)STF_SKILL5FAST, strval
+                             );
                   }
-                else
-                  if (!deh_strcasecmp(key,deh_state[6]))  // Unknown 2
-                    {
-                      if (fpout) fprintf(fpout," - misc2 = %ld\n",(long)value);
-                      states[indexnum].misc2 = (long)value; // long
-                    }
-                  else
-                    if (fpout) fprintf(fpout,"Invalid frame string index for '%s'\n",key);
-    }
+                  value |= STF_SKILL5FAST;
+                  break;
+              }
+          }
+          if (fpout) fprintf(fpout," - MBF21 bits = %x\n",(unsigned int)value);
+          states[indexnum].mbf21stateflags = value;
+      }
+      else if (fpout) fprintf(fpout,"Invalid frame string index for '%s'\n",key);
+  }
   return;
 }
 

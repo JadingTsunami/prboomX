@@ -1287,6 +1287,13 @@ typedef enum
  * Definition of the state (frames) structure                       *
  ********************************************************************/
 
+// mbf21 fixed by spec
+#define NUM_STATE_ARGS 8
+
+// mbf21 state flags
+// Tics halve on nightmare skill (demon)
+#define STF_SKILL5FAST 0x001
+
 typedef struct
 {
   spritenum_t sprite;       /* sprite number to show                       */
@@ -1295,6 +1302,8 @@ typedef struct
   actionf_t   action;       /* code pointer to function for action if any  */
   statenum_t  nextstate;    /* linked list pointer to next state or zero   */
   long        misc1, misc2; /* apparently never used in DOOM               */
+  int         stateargs[NUM_STATE_ARGS];
+  int         mbf21stateflags;
 } state_t;
 
 /* these are in info.c */
