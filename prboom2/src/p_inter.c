@@ -135,6 +135,7 @@ static dboolean P_GiveAmmo(player_t *player, ammotype_t ammo, int num)
 
   // jds - at this point, mbf21 handling is different
   // from the spec:
+  // https://github.com/kraflab/mbf21/blob/master/docs/spec.md
   // If the current weapon is enabled for AUTOSWITCHFROM and the player picks up ammo for a different weapon, autoswitch will occur for the highest ranking weapon (by index) matching these conditions:
   //   player has the weapon
   //   weapon is not flagged with NOAUTOSWITCHTO

@@ -385,7 +385,7 @@ void A_WeaponReady(player_t *player, pspdef_t *psp)
               ||
               (player->readyweapon == wp_bfg && C_CvarIsSet("autofire_bfg"))
               ||
-              (mbf21_features && !(weaponinfo[player->readyweapon].mbf21weaponflags & WF_NOAUTOFIRE))
+              (!(weaponinfo[player->readyweapon].mbf21weaponflags & WF_NOAUTOFIRE))
          )
         {
           player->attackdown = true;
