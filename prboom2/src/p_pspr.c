@@ -364,8 +364,13 @@ void A_WeaponReady(player_t *player, pspdef_t *psp)
 
   if (player->cmd.buttons & BT_ATTACK)
     {
-      if (!player->attackdown || ((player->readyweapon != wp_missile || C_CvarIsSet("autofire_rocketlauncher")) &&
-                                  (player->readyweapon != wp_bfg || C_CvarIsSet("autofire_bfg"))))
+      if (!player->attackdown ||
+              (player->readyweapon == wp_missile && C_CvarIsSet("autofire_rocketlauncher"))
+              ||
+              (player->readyweapon == wp_bfg && C_CvarIsSet("autofire_bfg"))
+              ||
+              (mbf21_features && !(weaponinfo[player->readyweapon].mbf21weaponflags & WF_NOAUTOFIRE))
+         )
         {
           player->attackdown = true;
           P_FireWeapon(player);
