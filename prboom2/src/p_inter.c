@@ -148,7 +148,7 @@ static dboolean P_GiveAmmo(player_t *player, ammotype_t ammo, int num)
       
       // current weapon allows switching AND
       // player picked up ammo for a different weapon
-      if (current_weaponinfo.mbf21weaponflags & WF_AUTOSWITCHFROM &&
+      if ((current_weaponinfo.mbf21weaponflags & WF_AUTOSWITCHFROM) &&
               current_weaponinfo.ammo != ammo) {
           // hunt for a new weapon in descending index order
           for (wi = NUMWEAPONS - 1; wi > player->readyweapon; wi--) {

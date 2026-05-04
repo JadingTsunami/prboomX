@@ -1217,7 +1217,6 @@ static const struct deh_mobjflags_s deh_mobjflags_mbf21[] = {
     {"E4M8BOSS",       MF2_E4M8BOSS}, 	        // E4M8 boss (mastermind)
     {"RIP",            MF2_RIP}, 	            // Ripper projectile (does not disappear on impact)
     {"FULLVOLSOUNDS",  MF2_FULLVOLSOUNDS}, 	    // Full volume see / death sounds (cyberdemon,                   mastermind)
-    {NULL,             0}
 };
 
 // jds - from spec
@@ -1230,7 +1229,6 @@ static const deh_weaponflags_s deh_weaponflags_mbf21[] = {
     {"FLEEMELEE",     WF_FLEEMELEE},
     {"AUTOSWITCHFROM",WF_AUTOSWITCHFROM},
     {"NOAUTOSWITCHTO",WF_NOAUTOSWITCHTO},
-    {NULL,            0}
 };
 
 // STATE - Dehacked block name = "Frame" and "Pointer"
@@ -2535,7 +2533,7 @@ static void deh_procWeapon(DEHFILE *fpin, FILE* fpout, char *line)
   uint_64_t value;      // All deh values are ints or longs
   int indexnum;
   int bGetData;
-  char* strval;
+  char* strval = NULL;
 
   strncpy(inbuffer,line,DEH_BUFFERMAX-1);
 
