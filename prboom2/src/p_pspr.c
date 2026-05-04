@@ -274,7 +274,6 @@ dboolean P_CheckAmmo(player_t *player)
               count = 2;
   }
 
-
   // Some do not need ammunition anyway.
   // Return if current ammunition sufficient.
 
