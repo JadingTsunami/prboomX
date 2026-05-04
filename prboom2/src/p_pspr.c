@@ -68,7 +68,7 @@
   #define CHECK_WEAPON_CODEPOINTER(codepointer, player)
 #endif
 
-#define USE_AMMO(amount_to_use) player->ammo[weaponinfo[player->readyweapon].ammo] -= (mbf21_features && (weaponinfo[player->readyweapon].ammopershot != WP_DEFAULT_AMMO_PER_SHOT)) ? weaponinfo[player->readyweapon].ammopershot : amount_to_use
+#define USE_AMMO(amount_to_use) player->ammo[weaponinfo[player->readyweapon].ammo] -= (mbf21_features && (weaponinfo[player->readyweapon].ammopershot != WP_DEFAULT_AMMO_PER_SHOT)) ? weaponinfo[player->readyweapon].ammopershot : MIN(amount_to_use, player->ammo[weaponinfo[player->readyweapon].ammo])
 
 extern void P_Thrust(player_t *, angle_t, fixed_t);
 
@@ -365,6 +365,7 @@ void A_WeaponReady(player_t *player, pspdef_t *psp)
   if (player->cmd.buttons & BT_ATTACK)
     {
       if (!player->attackdown ||
+              // These PrBoomX CVARs override Doom behavior, including MBF21
               (player->readyweapon == wp_missile && C_CvarIsSet("autofire_rocketlauncher"))
               ||
               (player->readyweapon == wp_bfg && C_CvarIsSet("autofire_bfg"))
