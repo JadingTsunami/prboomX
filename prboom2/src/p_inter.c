@@ -133,6 +133,52 @@ static dboolean P_GiveAmmo(player_t *player, ammotype_t ammo, int num)
   if (player->ammo[ammo] > player->maxammo[ammo])
     player->ammo[ammo] = player->maxammo[ammo];
 
+  // jds - at this point, mbf21 handling is different
+  // from the spec:
+  // If the current weapon is enabled for AUTOSWITCHFROM and the player picks up ammo for a different weapon, autoswitch will occur for the highest ranking weapon (by index) matching these conditions:
+  //   player has the weapon
+  //   weapon is not flagged with NOAUTOSWITCHTO
+  //   weapon uses the ammo that was picked up
+  //   player did not have enough ammo to fire the weapon before
+  //   player now has enough ammo to fire the weapon
+  if (mbf21_features) {
+      int wi;
+      weaponinfo_t current_weaponinfo = weaponinfo[player->readyweapon];
+      weaponinfo_t candidate_weaponinfo;
+      
+      // current weapon allows switching AND
+      // player picked up ammo for a different weapon
+      if (current_weaponinfo.mbf21weaponflags & WF_AUTOSWITCHFROM &&
+              current_weaponinfo.ammo != ammo) {
+          // hunt for a new weapon in descending index order
+          for (wi = NUMWEAPONS - 1; wi > player->readyweapon; wi--) {
+              candidate_weaponinfo = weaponinfo[wi];
+              if (!(candidate_weaponinfo.mbf21weaponflags & WF_NOAUTOSWITCHTO) &&
+                      candidate_weaponinfo.ammo == ammo) {
+                  int ammo_per_shot = 1;
+
+                  if (candidate_weaponinfo.ammopershot != WP_DEFAULT_AMMO_PER_SHOT) {
+                      ammo_per_shot = candidate_weaponinfo.ammopershot;
+                  } else if (wi == wp_bfg) {
+                      ammo_per_shot = BFGCELLS;
+                  } else if (wi == wp_supershotgun) {
+                      ammo_per_shot = 2;
+                  }
+
+                  // player didn't have enough ammo 
+                  if (ammo_per_shot > oldammo &&
+                        // but now the player does
+                        player->ammo[ammo] >= ammo_per_shot) {
+                      player->pendingweapon = wi;
+                      break;
+                  }
+              }
+          }
+      }
+
+      return true;
+  }
+
   // If non zero ammo, don't change up weapons, player was lower on purpose.
   if (oldammo)
     return true;

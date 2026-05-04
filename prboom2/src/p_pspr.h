@@ -61,6 +61,7 @@
 #define FF_FULLBRIGHT   0x8000  /* flag in thing->frame */
 #define FF_FRAMEMASK    0x7fff
 
+#define BFGCELLS bfgcells        /* Ty 03/09/98 externalized in p_inter.c */
 /*
  * Overlay psprites are scaled shapes
  * drawn directly on the view screen,

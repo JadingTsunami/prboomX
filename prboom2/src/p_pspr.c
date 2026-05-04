@@ -54,8 +54,6 @@
 #define WEAPONBOTTOM (FRACUNIT*128)
 #define WEAPONTOP    (FRACUNIT*32)
 
-#define BFGCELLS bfgcells        /* Ty 03/09/98 externalized in p_inter.c */
-
 // Checking correctness of input parameters for weapon codepointers
 // for avoiding crashes when they are used with player/monster states.
 #ifdef PRBOOM_DEBUG
