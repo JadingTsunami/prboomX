@@ -1464,7 +1464,8 @@ static const deh_bexptr deh_bexptrs[] = // CPhipps - static const
   {A_Stop,            "A_Stop"},
 
   // jds - new mbf21 codepointers
-  {A_SpawnObject,     "A_SpawnObject"},
+  {A_SpawnObject,         "A_SpawnObject"},
+  {A_MonsterProjectile,   "A_MonsterProjectile"},
 
   // This NULL entry must be the last in the list
   {NULL,              "A_NULL"},  // Ty 05/16/98

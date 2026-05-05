@@ -2889,7 +2889,7 @@ void A_SpawnObject(mobj_t* mo)
     z_vel = mo->state->stateargs[7];
 
     // convert to angle offset from original angle
-    newang = (mo->angle + (angle_t)(((long long int)angle << 16)/360)) >> ANGLETOFINESHIFT;
+    newang = (mo->angle + (angle_t)(((int_64_t)angle << 16)/360)) >> ANGLETOFINESHIFT;
 
     // now calculate x/y/z position
     newx = mo->x + (FixedMul(x_ofs, finecosine[newang]) - FixedMul(y_ofs, finesine[newang]));
@@ -2921,4 +2921,67 @@ void A_SpawnObject(mobj_t* mo)
             P_SetTarget(&newmobj->tracer, mo->target);
         }
     }
+}
+
+void A_MonsterProjectile(mobj_t* mo)
+{
+    // from the spec:
+    // type (uint): Type (dehnum) of actor to spawn
+    // angle (fixed): Angle (degrees), relative to calling actor's angle
+    // pitch (fixed): Pitch (degrees), relative to calling actor's pitch
+    // hoffset (fixed): Horizontal spawn offset, relative to calling actor's angle
+    // voffset (fixed): Vertical spawn offset, relative to actor's default projectile fire height
+
+    unsigned int type;
+    angle_t angle;
+    angle_t pitch;
+    fixed_t hoffset;
+    fixed_t voffset;
+
+    int i;
+    int newang, newx, newy, newz;
+    mobj_t* momissile;
+
+    if (!mbf21_features)
+        return;
+
+    // jds - originally, i would check all args are defined, else abort
+    // but it seems only type needs to be defined
+    if (!mo->state->stateargsdefined[0] || mo->state->stateargs[0] <= 0)
+        return;
+
+    // must have a locked target
+    if (!mo->target)
+        return;
+
+    type = mo->state->stateargs[0] - 1;
+    angle = mo->state->stateargs[1];
+    pitch = mo->state->stateargs[2];
+    hoffset = mo->state->stateargs[3];
+    voffset = mo->state->stateargs[4];
+
+    A_FaceTarget(mo);
+    momissile = P_SpawnMissile(mo, mo->target, type);
+
+    if (!momissile)
+        return;
+
+    // set momentum and offset
+    momissile->angle = (momissile->angle + (angle_t)(((int_64_t)angle << 16)/360));
+
+    newang = (momissile->angle >> ANGLETOFINESHIFT);
+
+    momissile->momx = FixedMul(momissile->info->speed, finecosine[newang]);
+    momissile->momy = FixedMul(momissile->info->speed, finesine[newang]);
+
+    // using pitch * sine wasn't matching other ports, so adapted from here:
+    // https://github.com/fabiangreffrath/woof/blob/c1b7f387e7da7a88c35ed119b6ed21fe0438cede/src/p_enemy.c#L2977
+    momissile->momz = FixedMul(momissile->info->speed, DegToSlope(pitch));
+
+    newang = (mo->angle - ANG90) >> ANGLETOFINESHIFT;
+    mo->x += FixedMul(hoffset, finecosine[newang]);
+    mo->y += FixedMul(hoffset, finesine[newang]);
+    mo->z += voffset;
+
+    P_SetTarget(&momissile->tracer, mo->target);
 }
