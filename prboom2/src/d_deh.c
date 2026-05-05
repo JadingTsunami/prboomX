@@ -1463,6 +1463,9 @@ static const deh_bexptr deh_bexptrs[] = // CPhipps - static const
   {A_BetaSkullAttack, "A_BetaSkullAttack"}, // killough 10/98: beta lost souls attacked different
   {A_Stop,            "A_Stop"},
 
+  // jds - new mbf21 codepointers
+  {A_SpawnObject,     "A_SpawnObject"},
+
   // This NULL entry must be the last in the list
   {NULL,              "A_NULL"},  // Ty 05/16/98
 };
@@ -1497,8 +1500,10 @@ void D_BuildBEXTables(void)
      deh_codeptr[i] = states[i].action;
 
      // jds - mbf21 initializers
-     for (j = 0; j < NUM_STATE_ARGS; j++)
+     for (j = 0; j < NUM_STATE_ARGS; j++) {
          states[i].stateargs[j] = 0;
+         states[i].stateargsdefined[j] = FALSE;
+     }
      states[i].mbf21stateflags = 0;
    }
 
@@ -2358,6 +2363,63 @@ static void deh_procFrame(DEHFILE *fpin, FILE* fpout, char *line)
           }
           if (fpout) fprintf(fpout," - MBF21 bits = %x\n",(unsigned int)value);
           states[indexnum].mbf21stateflags = value;
+      }
+      // args
+      else if (!deh_strcasecmp(key,deh_state[8]))
+      {
+          int argnum = 0;
+          states[indexnum].stateargs[argnum] = value;
+          states[indexnum].stateargsdefined[argnum] = TRUE;
+          if (fpout) fprintf(fpout," - Arg%d = %x\n",argnum+1,(unsigned int)value);
+      }
+      else if (!deh_strcasecmp(key,deh_state[9]))
+      {
+          int argnum = 1;
+          states[indexnum].stateargs[argnum] = value;
+          states[indexnum].stateargsdefined[argnum] = TRUE;
+          if (fpout) fprintf(fpout," - Arg%d = %x\n",argnum+1,(unsigned int)value);
+      }
+      else if (!deh_strcasecmp(key,deh_state[10]))
+      {
+          int argnum = 2;
+          states[indexnum].stateargs[argnum] = value;
+          states[indexnum].stateargsdefined[argnum] = TRUE;
+          if (fpout) fprintf(fpout," - Arg%d = %x\n",argnum+1,(unsigned int)value);
+      }
+      else if (!deh_strcasecmp(key,deh_state[11]))
+      {
+          int argnum = 3;
+          states[indexnum].stateargs[argnum] = value;
+          states[indexnum].stateargsdefined[argnum] = TRUE;
+          if (fpout) fprintf(fpout," - Arg%d = %x\n",argnum+1,(unsigned int)value);
+      }
+      else if (!deh_strcasecmp(key,deh_state[12]))
+      {
+          int argnum = 4;
+          states[indexnum].stateargs[argnum] = value;
+          states[indexnum].stateargsdefined[argnum] = TRUE;
+          if (fpout) fprintf(fpout," - Arg%d = %x\n",argnum+1,(unsigned int)value);
+      }
+      else if (!deh_strcasecmp(key,deh_state[13]))
+      {
+          int argnum = 5;
+          states[indexnum].stateargs[argnum] = value;
+          states[indexnum].stateargsdefined[argnum] = TRUE;
+          if (fpout) fprintf(fpout," - Arg%d = %x\n",argnum+1,(unsigned int)value);
+      }
+      else if (!deh_strcasecmp(key,deh_state[14]))
+      {
+          int argnum = 6;
+          states[indexnum].stateargs[argnum] = value;
+          states[indexnum].stateargsdefined[argnum] = TRUE;
+          if (fpout) fprintf(fpout," - Arg%d = %x\n",argnum+1,(unsigned int)value);
+      }
+      else if (!deh_strcasecmp(key,deh_state[15]))
+      {
+          int argnum = 7;
+          states[indexnum].stateargs[argnum] = value;
+          states[indexnum].stateargsdefined[argnum] = TRUE;
+          if (fpout) fprintf(fpout," - Arg%d = %x\n",argnum+1,(unsigned int)value);
       }
       else if (fpout) fprintf(fpout,"Invalid frame string index for '%s'\n",key);
   }

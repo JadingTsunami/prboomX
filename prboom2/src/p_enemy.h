@@ -120,4 +120,6 @@ void A_Stop(mobj_t *);
 
 void A_SkullPop(mobj_t *);
 
+//mbf21 pointers
+void A_SpawnObject(mobj_t *);
 #endif // __P_ENEMY__

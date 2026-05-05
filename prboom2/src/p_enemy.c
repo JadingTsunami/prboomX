@@ -2847,3 +2847,78 @@ void A_LineEffect(mobj_t *mo)
   mo->state->misc1 = junk.special;
   mo->player = oldplayer;
 }
+
+// jds - mbf21 codepointer functions
+void A_SpawnObject(mobj_t* mo)
+{
+    // type (uint): Type (dehnum) of actor to spawn
+    // angle (fixed): Angle (degrees), relative to calling actor's angle
+    // x_ofs (fixed): X (forward/back) spawn position offset
+    // y_ofs (fixed): Y (left/right) spawn position offset
+    // z_ofs (fixed): Z (up/down) spawn position offset
+    // x_vel (fixed): X (forward/back) velocity
+    // y_vel (fixed): Y (left/right) velocity
+    // z_vel (fixed): Z (up/down) velocity
+    unsigned int type;
+    angle_t angle;
+    fixed_t x_ofs;
+    fixed_t y_ofs;
+    fixed_t z_ofs;
+    fixed_t x_vel;
+    fixed_t y_vel;
+    fixed_t z_vel;
+    int i;
+    int newang, newx, newy, newz;
+    mobj_t* newmobj;
+
+    if (!mbf21_features)
+        return;
+
+    // jds - originally, i would check all args are defined, else abort
+    // but it seems only type needs to be defined
+    if (!mo->state->stateargsdefined[0] || mo->state->stateargs[0] <= 0)
+        return;
+
+    type  = mo->state->stateargs[0] - 1;
+    angle = mo->state->stateargs[1];
+    x_ofs = mo->state->stateargs[2];
+    y_ofs = mo->state->stateargs[3];
+    z_ofs = mo->state->stateargs[4];
+    x_vel = mo->state->stateargs[5];
+    y_vel = mo->state->stateargs[6];
+    z_vel = mo->state->stateargs[7];
+
+    // convert to angle offset from original angle
+    newang = (mo->angle + (angle_t)(((long long int)angle << 16)/360)) >> ANGLETOFINESHIFT;
+
+    // now calculate x/y/z position
+    newx = mo->x + (FixedMul(x_ofs, finecosine[newang]) - FixedMul(y_ofs, finesine[newang]));
+    newy = mo->y + (FixedMul(x_ofs, finesine[newang]) + FixedMul(y_ofs, finecosine[newang]));
+    newz = mo->z + z_ofs;
+        
+    newmobj = P_SpawnMobj(newx, newy, newz, type);
+
+    if (!newmobj)
+        return;
+
+    newmobj->angle = (newang << ANGLETOFINESHIFT);
+    newmobj->momx = FixedMul(x_vel, finecosine[newang]) - FixedMul(y_vel, finesine[newang]);
+    newmobj->momy = FixedMul(x_vel, finesine[newang]) + FixedMul(y_vel, finecosine[newang]);
+    newmobj->momz = z_vel;
+
+    // from the spec, we must inherit missile properties
+    if (newmobj->info->flags & (MF_MISSILE | MF_BOUNCES)) {
+        // if the spawner is a missile/grenade...
+        if (mo->info->flags & (MF_MISSILE | MF_BOUNCES)) {
+            // ...copy its properties
+            P_SetTarget(&newmobj->target, mo->target);
+            P_SetTarget(&newmobj->tracer, mo->tracer);
+        } else {
+            // from spec:
+            // https://github.com/kraflab/mbf21/blob/master/docs/spec.md
+            // ..."otherwise, spawnee's target is set to the spawner and tracer is set to the spawner's target."
+            P_SetTarget(&newmobj->target, mo);
+            P_SetTarget(&newmobj->tracer, mo->target);
+        }
+    }
+}

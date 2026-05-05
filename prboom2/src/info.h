@@ -1303,6 +1303,7 @@ typedef struct
   statenum_t  nextstate;    /* linked list pointer to next state or zero   */
   long        misc1, misc2; /* apparently never used in DOOM               */
   int         stateargs[NUM_STATE_ARGS];
+  dboolean    stateargsdefined[NUM_STATE_ARGS];
   int         mbf21stateflags;
 } state_t;
 
