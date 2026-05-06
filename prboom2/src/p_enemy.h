@@ -123,4 +123,6 @@ void A_SkullPop(mobj_t *);
 //mbf21 pointers
 void A_SpawnObject(mobj_t *);
 void A_MonsterProjectile(mobj_t* mo);
+void A_MonsterBulletAttack(mobj_t* mo);
+
 #endif // __P_ENEMY__

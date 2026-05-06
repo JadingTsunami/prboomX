@@ -2985,3 +2985,80 @@ void A_MonsterProjectile(mobj_t* mo)
 
     P_SetTarget(&momissile->tracer, mo->target);
 }
+
+void A_MonsterBulletAttack(mobj_t* mo)
+{
+    // from spec:
+    // https://github.com/kraflab/mbf21/blob/master/docs/spec.md
+    // hspread (fixed): Horizontal spread (degrees, in fixed point)
+    // vspread (fixed): Vertical spread (degrees, in fixed point)
+    // numbullets (uint): Number of bullets to fire; if not set, defaults to 1
+    // damagebase (uint): Base damage of attack; if not set, defaults to 3
+    // damagedice (uint): Attack damage random multiplier; if not set, defaults to 5
+    fixed_t hspread;
+    fixed_t vspread;
+    unsigned int numbullets = 1;
+    unsigned int damagebase = 3;
+    unsigned int damagedice = 5;
+    int angle;
+    int bullet_angle;
+    fixed_t slope;
+    fixed_t bullet_slope;
+    int i;
+    int t1, t2, t3, t4;
+    int bullet_damage;
+    int_64_t max_offset_h;
+    int_64_t max_offset_v;
+    int bullet_pitch;
+
+    if (!mbf21_features)
+        return;
+
+    // must have a locked target
+    if (!mo->target)
+        return;
+
+    hspread = (fixed_t) mo->state->stateargs[0];
+    vspread = (fixed_t) mo->state->stateargs[1];
+    numbullets = (unsigned int) mo->state->stateargs[2];
+    damagebase = (unsigned int) mo->state->stateargs[3];
+    damagedice = (unsigned int) mo->state->stateargs[4];
+
+    A_FaceTarget(mo);
+
+    angle = mo->angle;
+    slope = P_AimLineAttack(mo, angle, MISSILERANGE, 0);
+    S_StartSound(mo, mo->info->attacksound);
+
+    // don't use negative spread values
+    if (hspread < 0)
+        hspread *= -1;
+
+    if (vspread < 0)
+        vspread *= -1;
+
+    max_offset_h = (int_64_t)(((uint_64_t)hspread * ANG1) >> FRACBITS);
+    max_offset_v = (int_64_t)(((uint_64_t)vspread * ANG1) >> FRACBITS);
+    for (i = 0; i < numbullets; i++) {
+        t1 = P_Random(pr_mbf21);
+        t2 = P_Random(pr_mbf21);
+        t3 = P_Random(pr_mbf21);
+        t4 = P_Random(pr_mbf21);
+
+        bullet_angle = angle + (angle_t)((max_offset_h * (t1 - t2)) / 255);
+        bullet_pitch = (angle_t)((max_offset_v * (t3 - t4)) / 255);
+        bullet_slope = slope;
+
+        // originally i missed that i need to clamp the range here
+        if (bullet_pitch > ANG90)
+            bullet_slope += finetangent[0];
+        else if (-bullet_pitch > ANG90)
+            bullet_slope += finetangent[FINEANGLES/2-1];
+        else
+            bullet_slope += finetangent[(ANG90 - bullet_pitch) >> ANGLETOFINESHIFT];
+
+        bullet_damage = (P_Random(pr_mbf21)%damagedice + 1)*damagebase;
+
+        P_LineAttack(mo, bullet_angle, MISSILERANGE, bullet_slope, bullet_damage);
+    }
+}
