@@ -2997,9 +2997,9 @@ void A_MonsterBulletAttack(mobj_t* mo)
     // damagedice (uint): Attack damage random multiplier; if not set, defaults to 5
     fixed_t hspread;
     fixed_t vspread;
-    unsigned int numbullets = 1;
-    unsigned int damagebase = 3;
-    unsigned int damagedice = 5;
+    unsigned int numbullets;
+    unsigned int damagebase;
+    unsigned int damagedice;
     int angle;
     int bullet_angle;
     fixed_t slope;
@@ -3020,9 +3020,10 @@ void A_MonsterBulletAttack(mobj_t* mo)
 
     hspread = (fixed_t) mo->state->stateargs[0];
     vspread = (fixed_t) mo->state->stateargs[1];
-    numbullets = (unsigned int) mo->state->stateargs[2];
-    damagebase = (unsigned int) mo->state->stateargs[3];
-    damagedice = (unsigned int) mo->state->stateargs[4];
+    
+    numbullets = (unsigned int) MOBJ_STATE_ARG_OR_DEFAULT(mo, 2, 1);
+    damagebase = (unsigned int) MOBJ_STATE_ARG_OR_DEFAULT(mo, 3, 3);
+    damagedice = (unsigned int) MOBJ_STATE_ARG_OR_DEFAULT(mo, 4, 5);
 
     A_FaceTarget(mo);
 
@@ -3062,3 +3063,45 @@ void A_MonsterBulletAttack(mobj_t* mo)
         P_LineAttack(mo, bullet_angle, MISSILERANGE, bullet_slope, bullet_damage);
     }
 }
+
+void A_MonsterMeleeAttack(mobj_t* mo)
+{
+    unsigned int damagebase;
+    unsigned int damagedice;
+    unsigned int sound;
+    int damage;
+    fixed_t range;
+
+    if (!mbf21_features)
+        return;
+
+    // must have a locked target
+    if (!mo->target)
+        return;
+
+    // from spec:
+    // https://github.com/kraflab/mbf21/blob/master/docs/spec.md
+    //Args:
+    //    damagebase (uint): Base damage of attack; if not set, defaults to 3
+    //    damagedice (uint): Attack damage random multiplier; if not set, defaults to 8
+    //    sound (uint): Sound to play if attack hits
+    //    range (fixed): Attack range; if not set, defaults to calling actor's melee range property
+    //
+    //Notes:
+    //    Damage formula is: damage = (damagebase * random(1, damagedice))
+
+    damagebase = (unsigned int) MOBJ_STATE_ARG_OR_DEFAULT(mo, 0, 3);
+    damagedice = (unsigned int) MOBJ_STATE_ARG_OR_DEFAULT(mo, 1, 8);
+    sound = (unsigned int) MOBJ_STATE_ARG_OR_DEFAULT(mo, 2, sfx_None);
+    range = (fixed_t) MOBJ_STATE_ARG_OR_DEFAULT(mo, 3, mo->info->meleerange);
+
+    // adapted from P_CheckMeleeRange
+    range += mo->target->info->radius - 20*FRACUNIT;
+    damage = (P_Random(pr_mbf21)%damagedice+1)*damagebase;
+
+    // perform melee attack
+    A_FaceTarget(mo);
+    S_StartSound(mo, sound);
+    P_DamageMobj(mo->target, mo, mo, damage);
+}
+

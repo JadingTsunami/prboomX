@@ -1289,6 +1289,7 @@ typedef enum
 
 // mbf21 fixed by spec
 #define NUM_STATE_ARGS 8
+#define MOBJ_STATE_ARG_OR_DEFAULT(mo, argnum, defaultvalue) (((mo)->state->stateargsdefined[(argnum)]) ? ((mo)->state->stateargs[(argnum)]) : (defaultvalue))
 
 // mbf21 state flags
 // Tics halve on nightmare skill (demon)
