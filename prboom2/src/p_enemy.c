@@ -1622,6 +1622,7 @@ mobj_t* corpsehit;
 mobj_t* vileobj;
 fixed_t viletryx;
 fixed_t viletryy;
+int healradius;
 
 static dboolean PIT_VileCheck(mobj_t *thing)
 {
@@ -1637,7 +1638,7 @@ static dboolean PIT_VileCheck(mobj_t *thing)
   if (thing->info->raisestate == S_NULL)
     return true;        // monster doesn't have a raise state
 
-  maxdist = thing->info->radius + mobjinfo[MT_VILE].radius;
+  maxdist = thing->info->radius + healradius;
 
   if (D_abs(thing->x-viletryx) > maxdist || D_abs(thing->y-viletryy) > maxdist)
     return true;                // not actually touching
@@ -1682,12 +1683,17 @@ static dboolean PIT_VileCheck(mobj_t *thing)
     return false;               // got one, so stop checking
 }
 
+void A_VileChase(mobj_t* actor)
+{
+    A_HealChaseGeneric(actor, mobjinfo[MT_VILE].radius, S_VILE_HEAL1, sfx_slop);
+}
+
 //
 // A_VileChase
 // Check for ressurecting a body
 //
 
-void A_VileChase(mobj_t* actor)
+void A_HealChaseGeneric(mobj_t* actor, int radius, statenum_t healstate, sfxenum_t healsound)
 {
   int xl, xh;
   int yl, yh;
@@ -1707,6 +1713,7 @@ void A_VileChase(mobj_t* actor)
       yh = P_GetSafeBlockY(viletryy - bmaporgy + MAXRADIUS*2);
 
       vileobj = actor;
+      healradius = radius;
       for (bx=xl ; bx<=xh ; bx++)
         {
           for (by=yl ; by<=yh ; by++)
@@ -1724,8 +1731,8 @@ void A_VileChase(mobj_t* actor)
                   A_FaceTarget(actor);
                   actor->target = temp;
 
-                  P_SetMobjState(actor, S_VILE_HEAL1);
-                  S_StartSound(corpsehit, sfx_slop);
+                  P_SetMobjState(actor, healstate);
+                  S_StartSound(corpsehit, healsound);
                   info = corpsehit->info;
 
                   P_SetMobjState(corpsehit,info->raisestate);
@@ -3120,4 +3127,28 @@ void A_RadiusDamage(mobj_t* mo)
     radius = mo->state->stateargs[1];
 
     P_RadiusAttackCustomRadius(mo,mo->target,damage,radius);
+}
+
+void A_NoiseAlert(mobj_t* mo)
+{
+    if (!mbf21_features)
+        return;
+
+    if (!mo->target)
+        return;
+
+    P_NoiseAlert(mo->target, mo);
+}
+
+void A_HealChase(mobj_t* mo)
+{
+    unsigned int state;
+    unsigned int sound;
+    // state (uint): State to jump to on the calling actor when resurrecting a corpse
+    // sound (uint): Sound to play when resurrecting a corpse
+
+    state = MOBJ_STATE_ARG_OR_DEFAULT(mo, 0, 0);
+    sound = MOBJ_STATE_ARG_OR_DEFAULT(mo, 1, sfx_None);
+
+    A_HealChaseGeneric(mo, mo->info->radius, state, sound);
 }
