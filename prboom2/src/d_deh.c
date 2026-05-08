@@ -1468,6 +1468,7 @@ static const deh_bexptr deh_bexptrs[] = // CPhipps - static const
   {A_MonsterProjectile,   "A_MonsterProjectile"},
   {A_MonsterBulletAttack, "A_MonsterBulletAttack"},
   {A_MonsterMeleeAttack,  "A_MonsterMeleeAttack"},
+  {A_RadiusDamage,        "A_RadiusDamage"},
 
   // This NULL entry must be the last in the list
   {NULL,              "A_NULL"},  // Ty 05/16/98

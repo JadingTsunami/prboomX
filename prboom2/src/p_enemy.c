@@ -3105,3 +3105,19 @@ void A_MonsterMeleeAttack(mobj_t* mo)
     P_DamageMobj(mo->target, mo, mo, damage);
 }
 
+void A_RadiusDamage(mobj_t* mo)
+{
+    unsigned int damage;
+    unsigned int radius;
+
+    if (!mbf21_features)
+        return;
+
+    if (!mo->state)
+        return;
+
+    damage = mo->state->stateargs[0];
+    radius = mo->state->stateargs[1];
+
+    P_RadiusAttackCustomRadius(mo,mo->target,damage,radius);
+}

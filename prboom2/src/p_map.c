@@ -1931,7 +1931,8 @@ void P_UseLines (player_t*  player)
 mobj_t *bombsource, *bombspot;
 //e6y static 
 int bombdamage;
-
+// jds mbf21
+int bombradius;
 
 //
 // PIT_RadiusAttack
@@ -1985,26 +1986,29 @@ dboolean PIT_RadiusAttack (mobj_t* thing)
   dist = (dist - thing->radius) >> FRACBITS;
 
   if (dist < 0)
-  dist = 0;
+      dist = 0;
 
-  if (dist >= bombdamage)
+  if (dist >= bombradius)
     return true;  // out of range
 
   if ( P_CheckSight (thing, bombspot) )
     {
-    // must be in direct path
-    P_DamageMobj (thing, bombspot, bombsource, bombdamage - dist);
+        int damage;
+
+        if (bombdamage == bombradius) {
+            damage = bombdamage - dist;
+        } else {
+            // scale damage linearly across the radius
+            damage = (bombdamage * (bombradius - dist)/bombradius) + 1;
+        }
+        // must be in direct path
+        P_DamageMobj (thing, bombspot, bombsource, damage);
     }
 
   return true;
 }
 
-
-//
-// P_RadiusAttack
-// Source is the creature that caused the explosion at spot.
-//
-void P_RadiusAttack(mobj_t* spot,mobj_t* source,int damage)
+void P_RadiusAttackCustomRadius(mobj_t* spot,mobj_t* source,int damage,int radius)
 {
   int x;
   int y;
@@ -2016,7 +2020,7 @@ void P_RadiusAttack(mobj_t* spot,mobj_t* source,int damage)
 
   fixed_t dist;
 
-  dist = (damage+MAXRADIUS)<<FRACBITS;
+  dist = (radius+MAXRADIUS)<<FRACBITS;
   yh = P_GetSafeBlockY(spot->y + dist - bmaporgy);
   yl = P_GetSafeBlockY(spot->y - dist - bmaporgy);
   xh = P_GetSafeBlockX(spot->x + dist - bmaporgx);
@@ -2024,10 +2028,21 @@ void P_RadiusAttack(mobj_t* spot,mobj_t* source,int damage)
   bombspot = spot;
   bombsource = source;
   bombdamage = damage;
+  bombradius = radius;
 
   for (y=yl ; y<=yh ; y++)
     for (x=xl ; x<=xh ; x++)
       P_BlockThingsIterator (x, y, PIT_RadiusAttack );
+
+}
+
+//
+// P_RadiusAttack
+// Source is the creature that caused the explosion at spot.
+//
+void P_RadiusAttack(mobj_t* spot,mobj_t* source,int damage)
+{
+    P_RadiusAttackCustomRadius(spot, source, damage, damage);
 }
 
 
