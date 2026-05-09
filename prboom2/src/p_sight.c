@@ -938,3 +938,17 @@ dboolean P_CheckSight(mobj_t *t1, mobj_t *t2)
   // the head node is the last node output
   return P_CrossBSPNode(numnodes-1);
 }
+
+// jds guess what - I ended up externalizing this.
+dboolean P_CheckFov(mobj_t *t1, mobj_t *t2, angle_t fov)
+{
+  angle_t angle, minang, maxang;
+
+  angle = R_PointToAngle2(t1->x, t1->y, t2->x, t2->y);
+  minang = t1->angle - fov / 2;
+  maxang = t1->angle + fov / 2;
+
+  return((minang > maxang) ? angle >= minang || angle <= maxang
+                           : angle >= minang && angle <= maxang);
+}
+

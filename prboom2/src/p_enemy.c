@@ -3287,54 +3287,134 @@ void A_JumpIfTargetInSight(mobj_t* mo)
 
     // adapted from
     // https://github.com/fabiangreffrath/woof/blob/2aa85bb3f31e795d45e2fbf972c39a18d1f9a41c/src/p_sight.c#L308
-    if (fovangle > 0) {
-        angle = R_PointToAngle2(mo->x, mo->y, mo->target->x, mo->target->y);
-        minang = mo->angle - fov / 2;
-        maxang = mo->angle + fov / 2;
+    if (fovangle > 0 && !P_CheckFov(mo, mo->target, fovangle))
+        return;
 
-        if (minang > maxang) {
-            if (!(angle >= minang || angle <= maxang))
-                return;
-        } else if (!(angle >= minang && angle <= maxang))
-            return;
-    }
-
-    if (!P_CheckSight(mo, mo->target))
+    if (P_CheckSight(mo, mo->target))
         P_SetMobjState(mo, state);
 }
 
 void A_JumpIfTargetCloser(mobj_t* mo)
 {
+    unsigned int state;
+    fixed_t distance;
+
     if (!mbf21_features || !mo || !mo->target)
         return;
+
+    state = mo->state->stateargs[0];
+    distance = mo->state->stateargs[1];
+
+    if (P_AproxDistance(mo->x - mo->target->x, mo->y - mo->target->y) < distance) {
+        P_SetMobjState(mo, state);
+    }
 }
 
 void A_JumpIfTracerInSight(mobj_t* mo)
 {
+    unsigned int state;
+    fixed_t fov;
+    angle_t fovangle;
+
     if (!mbf21_features || !mo || !mo->tracer)
         return;
+
+    state = mo->state->stateargs[0];
+    fov = mo->state->stateargs[1];
+    fovangle = FixedToAngle(fov);
+
+    if (fovangle > 0 && !P_CheckFov(mo, mo->tracer, fovangle))
+        return;
+
+    if (P_CheckSight(mo, mo->target))
+        P_SetMobjState(mo, state);
 }
 
 void A_JumpIfTracerCloser(mobj_t* mo)
 {
+    unsigned int state;
+    fixed_t distance;
+
     if (!mbf21_features || !mo || !mo->tracer)
         return;
+
+    state = mo->state->stateargs[0];
+    distance = mo->state->stateargs[1];
+
+    if (P_AproxDistance(mo->x - mo->tracer->x, mo->y - mo->tracer->y) < distance) {
+        P_SetMobjState(mo, state);
+    }
 }
 
 void A_JumpIfFlagsSet(mobj_t* mo)
 {
+    unsigned int state;
+    int flags;
+    int flags2;
+
     if (!mbf21_features || !mo)
         return;
+
+    state = mo->state->stateargs[0];
+    flags = mo->state->stateargs[1];
+    flags2 = mo->state->stateargs[2];
+
+    if (((mo->flags & flags) == flags) && ((mo->mbf21flags & flags2) == flags2))
+        P_SetMobjState(mo, state);
 }
 
 void A_AddFlags(mobj_t* mo)
 {
+    int flags;
+    int flags2;
+    dboolean noblockmap_added;
+    dboolean nosector_added;
+    dboolean redo_blockmap;
+
     if (!mbf21_features || !mo)
         return;
+
+    flags = mo->state->stateargs[0];
+    flags2 = mo->state->stateargs[1];
+
+    noblockmap_added = ((flags & MF_NOBLOCKMAP) && !(mo->flags & MF_NOBLOCKMAP));
+    nosector_added = ((flags & MF_NOSECTOR) && !(mo->flags & MF_NOSECTOR));
+    redo_blockmap = (noblockmap_added || nosector_added);
+
+    if (redo_blockmap)
+        P_UnsetThingPosition(mo);
+
+    mo->flags |= flags;
+    mo->mbf21flags |= flags2;
+
+    if (redo_blockmap)
+        P_SetThingPosition(mo);
 }
 
 void A_RemoveFlags(mobj_t* mo)
 {
+    int flags;
+    int flags2;
+    dboolean noblockmap_added;
+    dboolean nosector_added;
+    dboolean redo_blockmap;
+
     if (!mbf21_features || !mo)
         return;
+
+    flags = mo->state->stateargs[0];
+    flags2 = mo->state->stateargs[1];
+
+    noblockmap_added = ((flags & MF_NOBLOCKMAP) && !(mo->flags & MF_NOBLOCKMAP));
+    nosector_added = ((flags & MF_NOSECTOR) && !(mo->flags & MF_NOSECTOR));
+    redo_blockmap = (noblockmap_added || nosector_added);
+
+    if (redo_blockmap)
+        P_UnsetThingPosition(mo);
+
+    mo->flags &= ~flags;
+    mo->mbf21flags &= ~flags2;
+
+    if (redo_blockmap)
+        P_SetThingPosition(mo);
 }

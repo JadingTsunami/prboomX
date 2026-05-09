@@ -53,6 +53,7 @@ dboolean P_TeleportMove(mobj_t *thing, fixed_t x, fixed_t y,dboolean boss);
 void    P_SlideMove(mobj_t *mo);
 dboolean P_CheckSight(mobj_t *t1, mobj_t *t2);
 void    P_UseLines(player_t *player);
+dboolean P_CheckFov(mobj_t *t1, mobj_t *t2, angle_t fov);
 
 typedef dboolean (*CrossSubsectorFunc)(int num);
 extern CrossSubsectorFunc P_CrossSubsector;

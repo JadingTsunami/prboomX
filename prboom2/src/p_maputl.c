@@ -909,19 +909,6 @@ intercepts_overrun_t intercepts_overrun[] =
 // mbf21: RoughBlockCheck
 // [XA] adapted from Hexen -- used by P_RoughTargetSearch
 //
-// jds I should have exported this but didn't. oh well.
-static dboolean P_CheckFov(mobj_t *t1, mobj_t *t2, angle_t fov)
-{
-  angle_t angle, minang, maxang;
-
-  angle = R_PointToAngle2(t1->x, t1->y, t2->x, t2->y);
-  minang = t1->angle - fov / 2;
-  maxang = t1->angle + fov / 2;
-
-  return((minang > maxang) ? angle >= minang || angle <= maxang
-                           : angle >= minang && angle <= maxang);
-}
-
 static mobj_t *RoughBlockCheck(mobj_t *mo, int index, angle_t fov)
 {
   mobj_t *link;
