@@ -1471,6 +1471,7 @@ static const deh_bexptr deh_bexptrs[] = // CPhipps - static const
   {A_RadiusDamage,        "A_RadiusDamage"},
   {A_NoiseAlert,          "A_NoiseAlert"},
   {A_HealChase,           "A_HealChase"},
+  {A_SeekTracer,          "A_SeekTracer"},
 
   // This NULL entry must be the last in the list
   {NULL,              "A_NULL"},  // Ty 05/16/98

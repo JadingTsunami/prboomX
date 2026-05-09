@@ -131,5 +131,6 @@ void A_MonsterMeleeAttack(mobj_t* mo);
 void A_RadiusDamage(mobj_t* mo);
 void A_NoiseAlert(mobj_t* mo);
 void A_HealChase(mobj_t* mo);
+void A_SeekTracer(mobj_t* mo);
 
 #endif // __P_ENEMY__

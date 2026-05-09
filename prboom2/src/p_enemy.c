@@ -3152,3 +3152,80 @@ void A_HealChase(mobj_t* mo)
 
     A_HealChaseGeneric(mo, mo->info->radius, state, sound);
 }
+
+void A_SeekTracer(mobj_t* mo)
+{
+    angle_t threshold;
+    angle_t maxturnangle;
+#define DIR_CLOCKWISE (1)
+#define DIR_ANTICLOCKWISE (0)
+    int dir;
+    int dist;
+    angle_t delta;
+    angle_t angle;
+    mobj_t *target;
+    angle_t diff;
+    angle_t angle1;
+    angle_t angle2;
+
+    if (!mbf21_features || !mo || !mo->tracer)
+        return;
+
+    threshold    = FixedToAngle(mo->state->stateargs[0]);
+    maxturnangle = FixedToAngle(mo->state->stateargs[1]);
+
+    // adapted from:
+    // https://github.com/fabiangreffrath/woof/blob/2aa85bb3f31e795d45e2fbf972c39a18d1f9a41c/src/p_mobj.c#L1616
+
+    target = mo->tracer;
+
+    if (!(target->flags & MF_SHOOTABLE)) {
+        // Target died
+        mo->tracer = NULL;
+        return;
+    }
+
+    angle1 = mo->angle;
+    angle2 = R_PointToAngle2(mo->x, mo->y, target->x, target->y);
+    if (angle2 > angle1) {
+        diff = angle2 - angle1;
+        if (diff > ANG180) {
+            delta = ANGLE_MAX - diff;
+            dir = DIR_ANTICLOCKWISE;
+        } else {
+            delta = diff;
+            dir = DIR_CLOCKWISE;
+        }
+    } else {
+        diff = angle1 - angle2;
+        if (diff > ANG180) {
+            delta = ANGLE_MAX - diff;
+            dir = DIR_CLOCKWISE;
+        } else {
+            delta = diff;
+            dir = DIR_ANTICLOCKWISE;
+        }
+    }
+    if (delta > threshold) {
+        delta >>= 1;
+        if (delta > maxturnangle) {
+            delta = maxturnangle;
+        }
+    }
+    if (dir) {
+        mo->angle += delta;
+    } else {
+        mo->angle -= delta;
+    }
+    angle = mo->angle >> ANGLETOFINESHIFT;
+    mo->momx = FixedMul(mo->info->speed, finecosine[angle]);
+    mo->momy = FixedMul(mo->info->speed, finesine[angle]);
+    if (mo->z + mo->height < target->z || target->z + target->height < mo->z) {
+        dist = P_AproxDistance(target->x - mo->x, target->y - mo->y);
+        dist = dist / mo->info->speed;
+        if (dist < 1) {
+            dist = 1;
+        }
+        mo->momz = (target->z + (target->height/2) - mo->z) / dist;
+    }
+}
