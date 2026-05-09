@@ -132,5 +132,15 @@ void A_RadiusDamage(mobj_t* mo);
 void A_NoiseAlert(mobj_t* mo);
 void A_HealChase(mobj_t* mo);
 void A_SeekTracer(mobj_t* mo);
+void A_FindTracer(mobj_t* mo);
+void A_ClearTracer(mobj_t* mo);
+void A_JumpIfHealthBelow(mobj_t* mo);
+void A_JumpIfTargetInSight(mobj_t* mo);
+void A_JumpIfTargetCloser(mobj_t* mo);
+void A_JumpIfTracerInSight(mobj_t* mo);
+void A_JumpIfTracerCloser(mobj_t* mo);
+void A_JumpIfFlagsSet(mobj_t* mo);
+void A_AddFlags(mobj_t* mo);
+void A_RemoveFlags(mobj_t* mo);
 
 #endif // __P_ENEMY__

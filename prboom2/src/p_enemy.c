@@ -3168,7 +3168,7 @@ void A_SeekTracer(mobj_t* mo)
     angle_t angle1;
     angle_t angle2;
 
-    if (!mbf21_features || !mo || !mo->tracer)
+    if (!mbf21_features || !mo)
         return;
 
     threshold    = FixedToAngle(mo->state->stateargs[0]);
@@ -3228,4 +3228,113 @@ void A_SeekTracer(mobj_t* mo)
         }
         mo->momz = (target->z + (target->height/2) - mo->z) / dist;
     }
+}
+
+void A_FindTracer(mobj_t* mo)
+{
+  angle_t fov;
+  unsigned int rangeblocks;
+
+  if (!mbf21_features || !mo || mo->tracer)
+    return;
+
+  fov = FixedToAngle(mo->state->stateargs[0]);
+  rangeblocks = mo->state->stateargs[1];
+
+  // from:
+  // https://github.com/fabiangreffrath/woof/blob/2aa85bb3f31e795d45e2fbf972c39a18d1f9a41c/src/p_enemy.c#L3135
+  P_SetTarget(&mo->tracer, P_RoughTargetSearch(mo, fov, rangeblocks));
+}
+
+void A_ClearTracer(mobj_t* mo)
+{
+    if (!mbf21_features || !mo)
+        return;
+
+    P_SetTarget(&mo->tracer, NULL);
+}
+
+void A_JumpIfHealthBelow(mobj_t* mo)
+{
+    unsigned int state;
+    int health;
+
+    if (!mbf21_features || !mo)
+        return;
+
+    state = mo->state->stateargs[0];
+    health = mo->state->stateargs[1];
+
+    if (mo->health < health) {
+        P_SetMobjState(mo, state);
+    }
+}
+
+void A_JumpIfTargetInSight(mobj_t* mo)
+{
+    unsigned int state;
+    fixed_t fov;
+    angle_t fovangle;
+    angle_t angle;
+    angle_t minang, maxang;
+
+    if (!mbf21_features || !mo || !mo->target)
+        return;
+
+    state = mo->state->stateargs[0];
+    fov = mo->state->stateargs[1];
+    fovangle = FixedToAngle(fov);
+
+    // adapted from
+    // https://github.com/fabiangreffrath/woof/blob/2aa85bb3f31e795d45e2fbf972c39a18d1f9a41c/src/p_sight.c#L308
+    if (fovangle > 0) {
+        angle = R_PointToAngle2(mo->x, mo->y, mo->target->x, mo->target->y);
+        minang = mo->angle - fov / 2;
+        maxang = mo->angle + fov / 2;
+
+        if (minang > maxang) {
+            if (!(angle >= minang || angle <= maxang))
+                return;
+        } else if (!(angle >= minang && angle <= maxang))
+            return;
+    }
+
+    if (!P_CheckSight(mo, mo->target))
+        P_SetMobjState(mo, state);
+}
+
+void A_JumpIfTargetCloser(mobj_t* mo)
+{
+    if (!mbf21_features || !mo || !mo->target)
+        return;
+}
+
+void A_JumpIfTracerInSight(mobj_t* mo)
+{
+    if (!mbf21_features || !mo || !mo->tracer)
+        return;
+}
+
+void A_JumpIfTracerCloser(mobj_t* mo)
+{
+    if (!mbf21_features || !mo || !mo->tracer)
+        return;
+}
+
+void A_JumpIfFlagsSet(mobj_t* mo)
+{
+    if (!mbf21_features || !mo)
+        return;
+}
+
+void A_AddFlags(mobj_t* mo)
+{
+    if (!mbf21_features || !mo)
+        return;
+}
+
+void A_RemoveFlags(mobj_t* mo)
+{
+    if (!mbf21_features || !mo)
+        return;
 }

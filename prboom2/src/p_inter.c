@@ -153,6 +153,9 @@ static dboolean P_GiveAmmo(player_t *player, ammotype_t ammo, int num)
               current_weaponinfo.ammo != ammo) {
           // hunt for a new weapon in descending index order
           for (wi = NUMWEAPONS - 1; wi > player->readyweapon; wi--) {
+              if (!(player->weaponowned[wi]))
+                  continue;
+              
               candidate_weaponinfo = weaponinfo[wi];
               if (!(candidate_weaponinfo.mbf21weaponflags & WF_NOAUTOSWITCHTO) &&
                       candidate_weaponinfo.ammo == ammo) {
