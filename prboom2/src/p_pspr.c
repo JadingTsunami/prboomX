@@ -1004,6 +1004,7 @@ void P_MovePsprites(player_t *player)
   player->psprites[ps_flash].sy = player->psprites[ps_weapon].sy;
 }
 
+#define PSP_STATE_ARG_OR_DEFAULT(pspname, argnum, defaultvalue) (((pspname)->state->stateargsdefined[(argnum)]) ? ((pspname)->state->stateargs[(argnum)]) : (defaultvalue))
 
 void A_WeaponProjectile(player_t *player, pspdef_t *psp)
 {
@@ -1054,7 +1055,66 @@ void A_WeaponProjectile(player_t *player, pspdef_t *psp)
 
 void A_WeaponBulletAttack(player_t *player, pspdef_t *psp)
 {
+    fixed_t hspread; // Horizontal spread (degrees, in fixed point)
+    fixed_t vspread; // Vertical spread (degrees, in fixed point)
+    unsigned int numbullets; // Number of bullets to fire; if not set, defaults to 1
+    unsigned int damagebase; // Base damage of attack; if not set, defaults to 5
+    unsigned int damagedice; // Attack damage random multiplier; if not set, defaults to 3
 
+    int angle;
+    int bullet_angle;
+    fixed_t bullet_slope;
+    int i;
+    int t1, t2, t3, t4;
+    int bullet_damage;
+    int_64_t max_offset_h;
+    int_64_t max_offset_v;
+    int bullet_pitch;
+
+    if (!mbf21_features || !psp->state)
+        return;
+
+    hspread = psp->state->stateargs[0];
+    vspread = psp->state->stateargs[1];
+
+    numbullets = (unsigned int) PSP_STATE_ARG_OR_DEFAULT(psp, 2, 1);
+    damagebase = (unsigned int) PSP_STATE_ARG_OR_DEFAULT(psp, 3, 5);
+    damagedice = (unsigned int) PSP_STATE_ARG_OR_DEFAULT(psp, 4, 3); 
+
+    P_BulletSlope(player->mo);
+
+    // don't use negative spread values
+    if (hspread < 0)
+        hspread *= -1;
+
+    if (vspread < 0)
+        vspread *= -1;
+
+    angle = player->mo->angle;
+    max_offset_h = (int_64_t)(((uint_64_t)hspread * ANG1) >> FRACBITS);
+    max_offset_v = (int_64_t)(((uint_64_t)vspread * ANG1) >> FRACBITS);
+    for (i = 0; i < numbullets; i++) {
+        t1 = P_Random(pr_mbf21);
+        t2 = P_Random(pr_mbf21);
+        t3 = P_Random(pr_mbf21);
+        t4 = P_Random(pr_mbf21);
+
+        bullet_angle = angle + (angle_t)((max_offset_h * (t1 - t2)) / 255);
+        bullet_pitch = (angle_t)((max_offset_v * (t3 - t4)) / 255);
+        bullet_slope = bulletslope;
+
+        // originally i missed that i need to clamp the range here
+        if (bullet_pitch > ANG90)
+            bullet_slope += finetangent[0];
+        else if (-bullet_pitch > ANG90)
+            bullet_slope += finetangent[FINEANGLES/2-1];
+        else
+            bullet_slope += finetangent[(ANG90 - bullet_pitch) >> ANGLETOFINESHIFT];
+
+        bullet_damage = (P_Random(pr_mbf21)%damagedice + 1)*damagebase;
+
+        P_LineAttack(player->mo, bullet_angle, MISSILERANGE, bullet_slope, bullet_damage);
+    }
 }
 
 void A_WeaponMeleeAttack(player_t *player, pspdef_t *psp)
