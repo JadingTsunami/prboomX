@@ -2983,7 +2983,7 @@ void A_MonsterProjectile(mobj_t* mo)
 
     // using pitch * sine wasn't matching other ports, so adapted from here:
     // https://github.com/fabiangreffrath/woof/blob/c1b7f387e7da7a88c35ed119b6ed21fe0438cede/src/p_enemy.c#L2977
-    momissile->momz = FixedMul(momissile->info->speed, DegToSlope(pitch));
+    momissile->momz += FixedMul(momissile->info->speed, DegToSlope(pitch));
 
     newang = (mo->angle - ANG90) >> ANGLETOFINESHIFT;
     momissile->x += FixedMul(hoffset, finecosine[newang]);
@@ -3179,7 +3179,7 @@ void A_SeekTracer(mobj_t* mo)
 
     target = mo->tracer;
 
-    if (!(target->flags & MF_SHOOTABLE)) {
+    if (!target || !(target->flags & MF_SHOOTABLE)) {
         // Target died
         mo->tracer = NULL;
         return;
