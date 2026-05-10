@@ -128,4 +128,15 @@ void A_FireBFG();
 void A_BFGSpray();
 void A_FireOldBFG();
 
+// jds - mbf21 pointers
+void A_WeaponProjectile();
+void A_WeaponBulletAttack();
+void A_WeaponMeleeAttack();
+void A_WeaponSound();
+void A_WeaponJump();
+void A_ConsumeAmmo();
+void A_CheckAmmo();
+void A_RefireTo();
+void A_GunFlashTo();
+void A_WeaponAlert();
 #endif

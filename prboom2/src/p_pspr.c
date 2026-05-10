@@ -1003,3 +1003,96 @@ void P_MovePsprites(player_t *player)
   player->psprites[ps_flash].sx = player->psprites[ps_weapon].sx;
   player->psprites[ps_flash].sy = player->psprites[ps_weapon].sy;
 }
+
+
+void A_WeaponProjectile(player_t *player, pspdef_t *psp)
+{
+    unsigned int type; // Type (dehnum) of actor to spawn
+    fixed_t angle; // Angle (degrees), relative to player's angle
+    fixed_t pitch; // Pitch (degrees), relative to player's pitch
+    fixed_t hoffset; // Horizontal spawn offset, relative to player's angle
+    fixed_t voffset; // Vertical spawn offset, relative to player's default projectile fire height
+    mobj_t* momissile;
+
+    angle_t newang;
+
+    if (!mbf21_features || !psp || !psp->state)
+        return;
+
+    if (!psp->state->stateargsdefined[0] || psp->state->stateargs[0] == 0)
+        return;
+
+    type = psp->state->stateargs[0] - 1;
+    angle = psp->state->stateargs[1];
+    pitch = psp->state->stateargs[2];
+    hoffset = psp->state->stateargs[3]; 
+    voffset = psp->state->stateargs[4]; 
+
+    momissile = P_SpawnPlayerMissile(player->mo, type);
+    if (!momissile)
+        return;
+
+    // set momentum and offset
+    momissile->angle = (momissile->angle + (angle_t)(((int_64_t)angle << 16)/360));
+
+    newang = (momissile->angle >> ANGLETOFINESHIFT);
+
+    momissile->momx = FixedMul(momissile->info->speed, finecosine[newang]);
+    momissile->momy = FixedMul(momissile->info->speed, finesine[newang]);
+
+    // using pitch * sine wasn't matching other ports, so adapted from here:
+    // https://github.com/fabiangreffrath/woof/blob/c1b7f387e7da7a88c35ed119b6ed21fe0438cede/src/p_enemy.c#L2977
+    momissile->momz += FixedMul(momissile->info->speed, DegToSlope(pitch));
+
+    newang = (player->mo->angle - ANG90) >> ANGLETOFINESHIFT;
+    momissile->x += FixedMul(hoffset, finecosine[newang]);
+    momissile->y += FixedMul(hoffset, finesine[newang]);
+    momissile->z += voffset;
+
+    momissile->tracer = linetarget;
+}
+
+void A_WeaponBulletAttack(player_t *player, pspdef_t *psp)
+{
+
+}
+
+void A_WeaponMeleeAttack(player_t *player, pspdef_t *psp)
+{
+
+}
+
+void A_WeaponSound(player_t *player, pspdef_t *psp)
+{
+
+}
+
+void A_WeaponJump(player_t *player, pspdef_t *psp)
+{
+
+}
+
+void A_ConsumeAmmo(player_t *player, pspdef_t *psp)
+{
+
+}
+
+void A_CheckAmmo(player_t *player, pspdef_t *psp)
+{
+
+}
+
+void A_RefireTo(player_t *player, pspdef_t *psp)
+{
+
+}
+
+void A_GunFlashTo(player_t *player, pspdef_t *psp)
+{
+
+}
+
+void A_WeaponAlert(player_t *player, pspdef_t *psp)
+{
+
+}

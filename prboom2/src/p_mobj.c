@@ -1574,7 +1574,7 @@ void P_SpawnBlood(fixed_t x,fixed_t y,fixed_t z,int damage, mobj_t* bleeder)
 //  and possibly explodes it right there.
 //
 
-void P_CheckMissileSpawn (mobj_t* th)
+dboolean P_CheckMissileSpawn (mobj_t* th)
 {
   th->tics -= P_Random(pr_missile)&3;
   if (th->tics < 1)
@@ -1589,12 +1589,16 @@ void P_CheckMissileSpawn (mobj_t* th)
 
   // killough 8/12/98: for non-missile objects (e.g. grenades)
   if (!(th->flags & MF_MISSILE) && mbf_features)
-    return;
+    return true;
 
   // killough 3/15/98: no dropoff (really = don't care for missiles)
 
-  if (!P_TryMove (th, th->x, th->y, false))
+  if (!P_TryMove (th, th->x, th->y, false)) {
     P_ExplodeMissile (th);
+    return false;
+  }
+
+  return true;
 }
 
 
@@ -1636,7 +1640,9 @@ mobj_t* P_SpawnMissile(mobj_t* source,mobj_t* dest,mobjtype_t type)
     dist = 1;
 
   th->momz = (dest->z - source->z) / dist;
-  P_CheckMissileSpawn (th);
+  
+  if (!P_CheckMissileSpawn (th))
+      return NULL;
 
   return th;
 }
@@ -1647,7 +1653,7 @@ mobj_t* P_SpawnMissile(mobj_t* source,mobj_t* dest,mobjtype_t type)
 // Tries to aim at a nearby monster
 //
 
-void P_SpawnPlayerMissile(mobj_t* source,mobjtype_t type)
+mobj_t* P_SpawnPlayerMissile(mobj_t* source,mobjtype_t type)
 {
   mobj_t *th;
   fixed_t x, y, z, slope = 0;
@@ -1693,4 +1699,5 @@ void P_SpawnPlayerMissile(mobj_t* source,mobjtype_t type)
   th->momz = FixedMul(th->info->speed,slope);
 
   P_CheckMissileSpawn(th);
-  }
+  return th;
+}

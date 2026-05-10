@@ -1483,6 +1483,18 @@ static const deh_bexptr deh_bexptrs[] = // CPhipps - static const
   {A_AddFlags,            "A_AddFlags"},
   {A_RemoveFlags,         "A_RemoveFlags"},
 
+  // jds - new mbf21 weapon codepointers
+  {A_WeaponProjectile,   "A_WeaponProjectile"},
+  {A_WeaponBulletAttack, "A_WeaponBulletAttack"},
+  {A_WeaponMeleeAttack,  "A_WeaponMeleeAttack"},
+  {A_WeaponSound,        "A_WeaponSound"},
+  {A_WeaponJump,         "A_WeaponJump"},
+  {A_ConsumeAmmo,        "A_ConsumeAmmo"},
+  {A_CheckAmmo,          "A_CheckAmmo"},
+  {A_RefireTo,           "A_RefireTo"},
+  {A_GunFlashTo,         "A_GunFlashTo"},
+  {A_WeaponAlert,        "A_WeaponAlert"},
+
   // This NULL entry must be the last in the list
   {NULL,              "A_NULL"},  // Ty 05/16/98
 };

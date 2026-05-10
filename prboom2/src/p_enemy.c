@@ -2986,9 +2986,9 @@ void A_MonsterProjectile(mobj_t* mo)
     momissile->momz = FixedMul(momissile->info->speed, DegToSlope(pitch));
 
     newang = (mo->angle - ANG90) >> ANGLETOFINESHIFT;
-    mo->x += FixedMul(hoffset, finecosine[newang]);
-    mo->y += FixedMul(hoffset, finesine[newang]);
-    mo->z += voffset;
+    momissile->x += FixedMul(hoffset, finecosine[newang]);
+    momissile->y += FixedMul(hoffset, finesine[newang]);
+    momissile->z += voffset;
 
     P_SetTarget(&momissile->tracer, mo->target);
 }
