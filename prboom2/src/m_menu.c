@@ -3657,12 +3657,14 @@ void M_DrawGeneral(void)
 
 setup_menu_t comp_settings1[], comp_settings2[], comp_settings3[];
 setup_menu_t comp_settings3[];//e6y
+setup_menu_t comp_settings4[];
 
 setup_menu_t* comp_settings[] =
 {
   comp_settings1,
   comp_settings2,
   comp_settings3,
+  comp_settings4,
   NULL
 };
 
@@ -3698,7 +3700,13 @@ enum
   compat_maxhealth,
   compat_translucency,
   compat_skytransfers,
-  compat_fixblockmap
+  compat_fixblockmap,
+
+  //mbf21
+  compat_ledgeblock,
+  compat_friendlyspawn,
+  compat_voodooscroller,
+  compat_reservedlineflag,
 };
 
 setup_menu_t comp_settings1[] =  // Compatibility Settings screen #1
@@ -3776,12 +3784,6 @@ setup_menu_t comp_settings2[] =  // Compatibility Settings screen #2
 
   {"NEXT ->",S_SKIP|S_NEXT, m_null, KB_NEXT, C_Y+C_NEXTPREV, {comp_settings3}},//e6y
   {"<- PREV", S_SKIP|S_PREV, m_null, KB_PREV, C_Y+C_NEXTPREV,{comp_settings1}},
-
-  {"NEXT ->",S_SKIP|S_NEXT, m_null, KB_NEXT, C_Y+C_NEXTPREV, {comp_settings3}},
-
-  // Final entry
-
-  {0,S_SKIP|S_END,m_null}
 };
 
 //e6y
@@ -3814,9 +3816,31 @@ setup_menu_t comp_settings3[] =  // Compatibility Settings screen #3
   {"fix blockmap bug", S_YESNO, m_null, C_X,
    C_Y + compat_fixblockmap * COMP_SPC, {"comp_fix_blockmap"}},
 
+  {"NEXT ->",S_SKIP|S_NEXT, m_null, KB_NEXT, C_Y+C_NEXTPREV, {comp_settings4}},
   {"<- PREV", S_SKIP|S_PREV, m_null, KB_PREV, C_Y+C_NEXTPREV,{comp_settings2}},
+};
+
+
+//jds
+setup_menu_t comp_settings4[] =  // Compatibility Settings screen #3
+{
+  {"Ledges block ground enemies", S_YESNO, m_null, C_X,
+   C_Y + compat_ledgeblock * COMP_SPC, {"comp_ledgeblock"}},
+
+  {"A_Spawn new thing inherits friend flag from source thing", S_YESNO, m_null, C_X,
+   C_Y + compat_friendlyspawn * COMP_SPC, {"comp_friendlyspawn"}},
+
+  {"Voodoo dolls on slow scrollers move too slowly", S_YESNO, m_null, C_X,
+   C_Y + compat_voodooscroller * COMP_SPC, {"comp_voodooscroller"}},
+
+  {"The line flag 0x0800 clears extended flags.", S_YESNO, m_null, C_X,
+   C_Y + compat_reservedlineflag * COMP_SPC, {"comp_reservedlineflag"}},
+
+  {"<- PREV", S_SKIP|S_PREV, m_null, KB_PREV, C_Y+C_NEXTPREV,{comp_settings3}},
   {0,S_SKIP|S_END,m_null}
 };
+
+
 
 // Setting up for the Compatibility screen. Turn on flags, set pointers,
 // locate the first item on the screen where the cursor is allowed to

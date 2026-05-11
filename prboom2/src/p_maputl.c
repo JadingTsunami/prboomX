@@ -366,6 +366,7 @@ dboolean P_BlockLinesIterator(int x, int y, dboolean func(line_t*))
 {
   int        offset;
   const int  *list;   // killough 3/1/98: for removal of blockmap limit
+  extern dboolean all_blocklists_zero_start;
 
   if (x<0 || y<0 || x>=bmapwidth || y>=bmapheight)
     return true;
@@ -378,8 +379,12 @@ dboolean P_BlockLinesIterator(int x, int y, dboolean func(line_t*))
   // Most demos go out of sync, and maybe other problems happen, if we
   // don't consider linedef 0. For safety this should be qualified.
 
-  if (!demo_compatibility) // killough 2/22/98: demo_compatibility check
+  if ((!demo_compatibility && !mbf21_features)
+          ||
+        (mbf21_features && all_blocklists_zero_start)) { // killough 2/22/98: demo_compatibility check
     list++;     // skip 0 starting delimiter                      // phares
+  }
+
   for ( ; *list != -1 ; list++)                                   // phares
     {
       line_t *ld;

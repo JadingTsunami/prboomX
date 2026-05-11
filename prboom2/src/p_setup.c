@@ -102,6 +102,8 @@ int     firstglvertex = 0;
 int     nodesVersion  = 0;
 dboolean forceOldBsp   = false;
 
+dboolean all_blocklists_zero_start = false;
+
 // figgi 08/21/00 -- glSegs
 typedef struct
 {
@@ -1600,6 +1602,9 @@ static void P_LoadLineDefs2(int lump)
                   lines[j].tranlump = lump;
             break;
         }
+
+      if (mbf21_features && (ld->flags & 0x0800) && comp[comp_reservedlineflag])
+          ld->flags &= 0x1FF;
     }
 }
 
@@ -2013,6 +2018,8 @@ static dboolean P_VerifyBlockMap(int count)
   int x, y;
   int *maxoffs = blockmaplump + count;
 
+  all_blocklists_zero_start = true;
+
   for(y = 0; y < bmapheight; y++)
   {
     for(x = 0; x < bmapwidth; x++)
@@ -2041,6 +2048,9 @@ static dboolean P_VerifyBlockMap(int count)
       }
 
       list   = blockmaplump + offset;
+
+      if (*list != 0)
+          all_blocklists_zero_start = false;
 
       // scan forward for a -1 terminator before maxoffs
       for(tmplist = list; ; tmplist++)

@@ -863,6 +863,8 @@ dboolean P_CheckPosition (mobj_t* thing,fixed_t x,fixed_t y)
   yh = P_GetSafeBlockY(tmbbox[BOXTOP] - bmaporgy + MAXRADIUS);
 
 
+  if (mbf21_features)
+      validcount++;
   for (bx=xl ; bx<=xh ; bx++)
     for (by=yl ; by<=yh ; by++)
       if (!P_BlockThingsIterator(bx,by,PIT_CheckThing))
@@ -939,7 +941,10 @@ dboolean P_TryMove(mobj_t* thing,fixed_t x,fixed_t y,
        * killough 11/98: Improve symmetry of clipping on stairs
        */
       if (!(thing->flags & (MF_DROPOFF|MF_FLOAT))) {
-  if (comp[comp_dropoff])
+        dboolean mbf21_ledgeblock = (mbf21_features && (comp[comp_ledgeblock] && !(thing->intflags & MIF_SCROLLING)));
+
+
+  if (comp[comp_dropoff] || mbf21_ledgeblock)
     {
       // e6y
       // Fix demosync bug in mbf compatibility mode
@@ -949,7 +954,7 @@ dboolean P_TryMove(mobj_t* thing,fixed_t x,fixed_t y,
       // Links:
       // http://competn.doom2.net/pub/sda/t-z/v2-2822.zip
       // http://www.doomworld.com/idgames/index.php?id=11138
-      if ((compatibility || !dropoff 
+      if ((mbf21_ledgeblock || compatibility || !dropoff 
             || (!prboom_comp[PC_NO_DROPOFF].state && mbf_features && compatibility_level <= prboom_2_compatibility))
           && (tmfloorz - tmdropoffz > 24*FRACUNIT))
         return false;                      // don't stand over a dropoff

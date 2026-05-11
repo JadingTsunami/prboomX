@@ -330,7 +330,10 @@ static void P_XYMovement (mobj_t* mo)
   if (mo->momx > -STOPSPEED && mo->momx < STOPSPEED &&
       mo->momy > -STOPSPEED && mo->momy < STOPSPEED &&
       (!player || !(player->cmd.forwardmove | player->cmd.sidemove) ||
-       (player->mo != mo && compatibility_level >= lxdoom_1_compatibility)))
+       (player->mo != mo && compatibility_level >= lxdoom_1_compatibility
+        &&
+        (mbf21_features && (comp[comp_voodooscroller] || !(mo->intflags & MIF_SCROLLING)))
+        )))
     {
       // if in a walking frame, stop moving
 
@@ -814,6 +817,7 @@ void P_MobjThinker (mobj_t* mobj)
   if (mobj->momx | mobj->momy || mobj->flags & MF_SKULLFLY)
     {
       P_XYMovement(mobj);
+      mobj->intflags &= ~MIF_SCROLLING;
       if (mobj->thinker.function != P_MobjThinker) // cph - Must've been removed
   return;       // killough - mobj was removed
     }

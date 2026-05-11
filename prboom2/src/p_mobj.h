@@ -259,8 +259,11 @@
 // (some degree of opaqueness is good, to avoid compatibility woes)
 
 enum {
-  MIF_FALLING = 1,      // Object is falling
-  MIF_ARMED = 2,        // Object is armed (for MF_TOUCHY objects)
+  MIF_FALLING = 0x1,      // Object is falling
+  MIF_ARMED = 0x2,        // Object is armed (for MF_TOUCHY objects)
+
+  // mbf21
+  MIF_SCROLLING       = 0x8, // Object is affected by scroller / pusher / puller
 };
 
 // Map Object definition.

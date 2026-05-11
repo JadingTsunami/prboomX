@@ -121,6 +121,12 @@ enum {
   comp_maxhealth,
   comp_translucency,
 
+  // jds - mbf21
+  comp_ledgeblock,
+  comp_friendlyspawn,
+  comp_voodooscroller,
+  comp_reservedlineflag,
+
   COMP_NUM,      /* cph - should be last in sequence */
   COMP_TOTAL=32  // Some extra room for additional variables
 };

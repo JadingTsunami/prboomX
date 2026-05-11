@@ -2767,6 +2767,11 @@ void G_Compatibility(void)
     { boom_compatibility_compatibility, prboom_6_compatibility },
     // comp_translucency - No predefined translucency for some things
     { boom_compatibility_compatibility, prboom_6_compatibility },
+    // mbf21
+    { mbf21_compatibility, mbf21_compatibility },
+    { mbf21_compatibility, mbf21_compatibility },
+    { mbf21_compatibility, mbf21_compatibility },
+    { mbf21_compatibility, mbf21_compatibility },
   };
   unsigned int i;
 
@@ -2790,6 +2795,19 @@ void G_Compatibility(void)
     dog_jumping = 0;
 
     monkeys = 0;
+  }
+
+  if (mbf21_features) {
+      comp[comp_pursuit] = 1;
+      comp[comp_ledgeblock] = 1;
+      comp[comp_friendlyspawn] = 1;
+      comp[comp_voodooscroller] = 0;
+      comp[comp_reservedlineflag] = 1;
+  } else {
+      comp[comp_ledgeblock] = 0;
+      comp[comp_friendlyspawn] = 0;
+      comp[comp_voodooscroller] = 0;
+      comp[comp_reservedlineflag] = 0;
   }
 }
 
