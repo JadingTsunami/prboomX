@@ -1303,7 +1303,7 @@ typedef struct
   actionf_t   action;       /* code pointer to function for action if any  */
   statenum_t  nextstate;    /* linked list pointer to next state or zero   */
   long        misc1, misc2; /* apparently never used in DOOM               */
-  int         stateargs[NUM_STATE_ARGS];
+  int_64_t    stateargs[NUM_STATE_ARGS];
   dboolean    stateargsdefined[NUM_STATE_ARGS];
   int         mbf21stateflags;
 } state_t;

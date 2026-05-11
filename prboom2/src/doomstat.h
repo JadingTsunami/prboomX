@@ -128,7 +128,7 @@ enum {
   comp_reservedlineflag,
 
   COMP_NUM,      /* cph - should be last in sequence */
-  COMP_TOTAL=32  // Some extra room for additional variables
+  COMP_TOTAL=40  // Some extra room for additional variables
 };
 
 enum {

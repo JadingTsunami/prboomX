@@ -3703,7 +3703,7 @@ enum
   compat_fixblockmap,
 
   //mbf21
-  compat_ledgeblock,
+  compat_ledgeblock = 0,
   compat_friendlyspawn,
   compat_voodooscroller,
   compat_reservedlineflag,
@@ -3784,6 +3784,7 @@ setup_menu_t comp_settings2[] =  // Compatibility Settings screen #2
 
   {"NEXT ->",S_SKIP|S_NEXT, m_null, KB_NEXT, C_Y+C_NEXTPREV, {comp_settings3}},//e6y
   {"<- PREV", S_SKIP|S_PREV, m_null, KB_PREV, C_Y+C_NEXTPREV,{comp_settings1}},
+  {0,S_SKIP|S_END,m_null}
 };
 
 //e6y
@@ -3818,11 +3819,12 @@ setup_menu_t comp_settings3[] =  // Compatibility Settings screen #3
 
   {"NEXT ->",S_SKIP|S_NEXT, m_null, KB_NEXT, C_Y+C_NEXTPREV, {comp_settings4}},
   {"<- PREV", S_SKIP|S_PREV, m_null, KB_PREV, C_Y+C_NEXTPREV,{comp_settings2}},
+  {0,S_SKIP|S_END,m_null}
 };
 
 
 //jds
-setup_menu_t comp_settings4[] =  // Compatibility Settings screen #3
+setup_menu_t comp_settings4[] =  // Compatibility Settings screen #4
 {
   {"Ledges block ground enemies", S_YESNO, m_null, C_X,
    C_Y + compat_ledgeblock * COMP_SPC, {"comp_ledgeblock"}},

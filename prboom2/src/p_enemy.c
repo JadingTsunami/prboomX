@@ -52,6 +52,11 @@
 #include "lprintf.h"
 #include "e6y.h"//e6y
 #include "c_cvar.h"
+#ifdef _MSC_VER
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
 
 static mobj_t *current_actor;
 
@@ -2776,7 +2781,7 @@ void A_Spawn(mobj_t *mo)
           !prboom_comp[PC_DO_NOT_INHERIT_FRIENDLYNESS_FLAG_ON_SPAWN].state)
               ||
             (mbf21_features && comp[comp_friendlyspawn])) {
-          newmobj->flags = (newmobj->flags & ~MF_FRIEND) | (mo->flags & MF_FRIEND);
+          newmobj->flags = ((newmobj->flags & ~MF_FRIEND) | (mo->flags & MF_FRIEND));
       }
     }
 }
@@ -3358,8 +3363,8 @@ void A_JumpIfFlagsSet(mobj_t* mo)
         return;
 
     state = mo->state->stateargs[0];
-    flags = mo->state->stateargs[1];
-    flags2 = mo->state->stateargs[2];
+    flags = (uint32_t)mo->state->stateargs[1];
+    flags2 = (uint32_t)mo->state->stateargs[2];
 
     if (((mo->flags & flags) == flags) && ((mo->mbf21flags & flags2) == flags2))
         P_SetMobjState(mo, state);
@@ -3367,8 +3372,8 @@ void A_JumpIfFlagsSet(mobj_t* mo)
 
 void A_AddFlags(mobj_t* mo)
 {
-    int flags;
-    int flags2;
+    uint_64_t flags;
+    uint_64_t flags2;
     dboolean noblockmap_added;
     dboolean nosector_added;
     dboolean redo_blockmap;
@@ -3376,8 +3381,8 @@ void A_AddFlags(mobj_t* mo)
     if (!mbf21_features || !mo)
         return;
 
-    flags = mo->state->stateargs[0];
-    flags2 = mo->state->stateargs[1];
+    flags = (uint32_t) mo->state->stateargs[0];
+    flags2 = (uint32_t) mo->state->stateargs[1];
 
     noblockmap_added = ((flags & MF_NOBLOCKMAP) && !(mo->flags & MF_NOBLOCKMAP));
     nosector_added = ((flags & MF_NOSECTOR) && !(mo->flags & MF_NOSECTOR));
@@ -3395,8 +3400,8 @@ void A_AddFlags(mobj_t* mo)
 
 void A_RemoveFlags(mobj_t* mo)
 {
-    int flags;
-    int flags2;
+    uint_64_t flags;
+    uint_64_t flags2;
     dboolean noblockmap_added;
     dboolean nosector_added;
     dboolean redo_blockmap;
@@ -3414,8 +3419,8 @@ void A_RemoveFlags(mobj_t* mo)
     if (redo_blockmap)
         P_UnsetThingPosition(mo);
 
-    mo->flags &= ~flags;
-    mo->mbf21flags &= ~flags2;
+    mo->flags &= ~((uint32_t)flags);
+    mo->mbf21flags &= ~((uint32_t)flags2);
 
     if (redo_blockmap)
         P_SetThingPosition(mo);

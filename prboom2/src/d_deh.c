@@ -2397,58 +2397,58 @@ static void deh_procFrame(DEHFILE *fpin, FILE* fpout, char *line)
       else if (!deh_strcasecmp(key,deh_state[8]))
       {
           int argnum = 0;
-          states[indexnum].stateargs[argnum] = value;
+          states[indexnum].stateargs[argnum] = (int_64_t)value;
           states[indexnum].stateargsdefined[argnum] = TRUE;
-          if (fpout) fprintf(fpout," - Arg%d = %x\n",argnum+1,(unsigned int)value);
+          if (fpout) fprintf(fpout," - Arg%d = %lx\n",argnum+1,(unsigned long int)value);
       }
       else if (!deh_strcasecmp(key,deh_state[9]))
       {
           int argnum = 1;
-          states[indexnum].stateargs[argnum] = value;
+          states[indexnum].stateargs[argnum] = (int_64_t)value;
           states[indexnum].stateargsdefined[argnum] = TRUE;
-          if (fpout) fprintf(fpout," - Arg%d = %x\n",argnum+1,(unsigned int)value);
+          if (fpout) fprintf(fpout," - Arg%d = %lx\n",argnum+1,(unsigned long int)value);
       }
       else if (!deh_strcasecmp(key,deh_state[10]))
       {
           int argnum = 2;
-          states[indexnum].stateargs[argnum] = value;
+          states[indexnum].stateargs[argnum] = (int_64_t)value;
           states[indexnum].stateargsdefined[argnum] = TRUE;
-          if (fpout) fprintf(fpout," - Arg%d = %x\n",argnum+1,(unsigned int)value);
+          if (fpout) fprintf(fpout," - Arg%d = %lx\n",argnum+1,(unsigned long int)value);
       }
       else if (!deh_strcasecmp(key,deh_state[11]))
       {
           int argnum = 3;
-          states[indexnum].stateargs[argnum] = value;
+          states[indexnum].stateargs[argnum] = (int_64_t)value;
           states[indexnum].stateargsdefined[argnum] = TRUE;
-          if (fpout) fprintf(fpout," - Arg%d = %x\n",argnum+1,(unsigned int)value);
+          if (fpout) fprintf(fpout," - Arg%d = %lx\n",argnum+1,(unsigned long int)value);
       }
       else if (!deh_strcasecmp(key,deh_state[12]))
       {
           int argnum = 4;
-          states[indexnum].stateargs[argnum] = value;
+          states[indexnum].stateargs[argnum] = (int_64_t)value;
           states[indexnum].stateargsdefined[argnum] = TRUE;
-          if (fpout) fprintf(fpout," - Arg%d = %x\n",argnum+1,(unsigned int)value);
+          if (fpout) fprintf(fpout," - Arg%d = %lx\n",argnum+1,(unsigned long int)value);
       }
       else if (!deh_strcasecmp(key,deh_state[13]))
       {
           int argnum = 5;
-          states[indexnum].stateargs[argnum] = value;
+          states[indexnum].stateargs[argnum] = (int_64_t)value;
           states[indexnum].stateargsdefined[argnum] = TRUE;
-          if (fpout) fprintf(fpout," - Arg%d = %x\n",argnum+1,(unsigned int)value);
+          if (fpout) fprintf(fpout," - Arg%d = %lx\n",argnum+1,(unsigned long int)value);
       }
       else if (!deh_strcasecmp(key,deh_state[14]))
       {
           int argnum = 6;
-          states[indexnum].stateargs[argnum] = value;
+          states[indexnum].stateargs[argnum] = (int_64_t)value;
           states[indexnum].stateargsdefined[argnum] = TRUE;
-          if (fpout) fprintf(fpout," - Arg%d = %x\n",argnum+1,(unsigned int)value);
+          if (fpout) fprintf(fpout," - Arg%d = %lx\n",argnum+1,(unsigned long int)value);
       }
       else if (!deh_strcasecmp(key,deh_state[15]))
       {
           int argnum = 7;
-          states[indexnum].stateargs[argnum] = value;
+          states[indexnum].stateargs[argnum] = (int_64_t)value;
           states[indexnum].stateargsdefined[argnum] = TRUE;
-          if (fpout) fprintf(fpout," - Arg%d = %x\n",argnum+1,(unsigned int)value);
+          if (fpout) fprintf(fpout," - Arg%d = %lx\n",argnum+1,(unsigned long int)value);
       }
       else if (fpout) fprintf(fpout,"Invalid frame string index for '%s'\n",key);
   }
