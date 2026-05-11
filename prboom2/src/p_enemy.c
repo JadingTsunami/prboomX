@@ -32,6 +32,7 @@
  *      that are associated with states/frames.
  *
  *-----------------------------------------------------------------------------*/
+#include <stdint.h>
 
 #include "doomstat.h"
 #include "m_random.h"
@@ -52,11 +53,6 @@
 #include "lprintf.h"
 #include "e6y.h"//e6y
 #include "c_cvar.h"
-#ifdef _MSC_VER
-#include <io.h>
-#else
-#include <unistd.h>
-#endif
 
 static mobj_t *current_actor;
 
