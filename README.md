@@ -15,6 +15,7 @@ Install [PrBoom-Plus](https://github.com/coelckers/prboom-plus) and place the bi
 
 # Features
 
+* MBF21 support
 * Zip file support
     * Note all WAD/DEH/BEX in the zip will be loaded
 * Drop-down console (default key bind: `~`)
