@@ -1057,7 +1057,7 @@ void A_WeaponProjectile(player_t *player, pspdef_t *psp)
     momissile->y += FixedMul(hoffset, finesine[newang]);
     momissile->z += voffset;
 
-    momissile->tracer = linetarget;
+    P_SetTarget(&momissile->tracer, linetarget);
 }
 
 void A_WeaponBulletAttack(player_t *player, pspdef_t *psp)
