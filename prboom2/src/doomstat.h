@@ -76,6 +76,7 @@ extern complevel_t compatibility_level, default_compatibility_level;
 #define compatibility (compatibility_level<=boom_compatibility_compatibility)
 #define demo_compatibility (compatibility_level < boom_compatibility_compatibility)
 #define mbf_features (compatibility_level>=mbf_compatibility)
+#define mbf21_features (compatibility_level>=mbf21_compatibility)
 
 // v1.1-like pitched sounds
 extern int pitched_sounds;        // killough
@@ -120,8 +121,14 @@ enum {
   comp_maxhealth,
   comp_translucency,
 
+  // jds - mbf21
+  comp_ledgeblock,
+  comp_friendlyspawn,
+  comp_voodooscroller,
+  comp_reservedlineflag,
+
   COMP_NUM,      /* cph - should be last in sequence */
-  COMP_TOTAL=32  // Some extra room for additional variables
+  COMP_TOTAL=40  // Some extra room for additional variables
 };
 
 enum {

@@ -48,6 +48,7 @@
 #define __TABLES__
 
 #include "m_fixed.h"
+#include "doomtype.h"
 
 #define FINEANGLES              8192
 #define FINEMASK                (FINEANGLES-1)
@@ -93,5 +94,39 @@ extern angle_t tantoangle[SLOPERANGE+1];
 typedef int (*slope_div_fn)(unsigned int num, unsigned int den);
 int SlopeDiv(unsigned int num, unsigned int den);
 int SlopeDivEx(unsigned int num, unsigned int den);
+
+// jds - these are useful utility functions, credited to/from woof:
+// https://github.com/fabiangreffrath/woof/blob/c1b7f387e7da7a88c35ed119b6ed21fe0438cede/src/tables.h#L79
+// mbf21: More utility functions, courtesy of Quasar (James Haley).
+// These are straight from Eternity so demos stay in sync.
+inline static angle_t FixedToAngle(fixed_t a)
+{
+  return (angle_t)(((uint_64_t)a * ANG1) >> FRACBITS);
+}
+
+inline static fixed_t AngleToFixed(angle_t a)
+{
+  return (fixed_t)(((uint_64_t)a << FRACBITS) / ANG1);
+}
+
+// [XA] Clamped angle->slope, for convenience
+inline static fixed_t AngleToSlope(int a)
+{
+  if (a > ANG90)
+    return finetangent[0];
+  else if (-a > ANG90)
+    return finetangent[FINEANGLES / 2 - 1];
+  else
+    return finetangent[(ANG90 - a) >> ANGLETOFINESHIFT];
+}
+
+// [XA] Ditto, using fixed-point-degrees input
+inline static fixed_t DegToSlope(fixed_t a)
+{
+  if (a >= 0)
+    return AngleToSlope(FixedToAngle(a));
+  else
+    return AngleToSlope(-(int)FixedToAngle(-a));
+}
 
 #endif

@@ -122,8 +122,8 @@ typedef enum {
   pr_helpfriend,              // #59
   pr_dropoff,                 // #60
   pr_randomjump,              // #61
-  pr_defect,                  // #62  // Start new entries -- add new entries below
-
+  pr_defect,                  // #62 
+  pr_mbf21,                   // #63 // Start new entries -- add new entries below
   // End of new entries
   NUMPRCLASS               // MUST be last item in list
 } pr_class_t;

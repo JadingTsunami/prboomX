@@ -85,6 +85,9 @@
 #define FRICTION_SHIFT  8
 #define PUSH_MASK       0x200
 #define PUSH_SHIFT      9
+// mbf21
+#define ALT_DAMAGE_MASK                0x1000
+#define KILL_GROUNDED_MONSTERS_MASK    0x2000
 
 //jff 02/04/98 Define masks, shifts, for fields in
 // generalized linedef types

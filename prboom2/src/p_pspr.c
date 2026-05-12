@@ -54,8 +54,6 @@
 #define WEAPONBOTTOM (FRACUNIT*128)
 #define WEAPONTOP    (FRACUNIT*32)
 
-#define BFGCELLS bfgcells        /* Ty 03/09/98 externalized in p_inter.c */
-
 // Checking correctness of input parameters for weapon codepointers
 // for avoiding crashes when they are used with player/monster states.
 #ifdef PRBOOM_DEBUG
@@ -84,14 +82,30 @@ static const int recoil_values[] = {    // phares
   80  // wp_supershotgun
 };
 
+// jds - mbf21-compatible ammo consumption function call
+static void P_UseAmmo(player_t *player, int amount_to_use)
+{
+    ammotype_t ammo_type = weaponinfo[player->readyweapon].ammo;
+
+    if (mbf21_features) {
+        if (ammo_type == am_noammo)
+            return;
+    
+        if (weaponinfo[player->readyweapon].ammopershot != WP_DEFAULT_AMMO_PER_SHOT) {
+            // use ammo per shot OR however much is left, whatever is smaller
+            amount_to_use = MIN(weaponinfo[player->readyweapon].ammopershot, player->ammo[weaponinfo[player->readyweapon].ammo]);
+        }
+
+    }
+
+    player->ammo[weaponinfo[player->readyweapon].ammo] -= amount_to_use;
+}
+
 //
 // P_SetPsprite
 //
-
-static void P_SetPsprite(player_t *player, int position, statenum_t stnum)
+static void P_SetPspriteGeneric(player_t *player, pspdef_t* psp, statenum_t stnum)
 {
-  pspdef_t *psp = &player->psprites[position];
-
   do
     {
       state_t *state;
@@ -126,6 +140,14 @@ static void P_SetPsprite(player_t *player, int position, statenum_t stnum)
     }
   while (!psp->tics);     // an initial state of 0 could cycle through
 }
+
+static void P_SetPsprite(player_t *player, int position, statenum_t stnum)
+{
+  pspdef_t *psp = &player->psprites[position];
+
+  P_SetPspriteGeneric(player, psp, stnum);
+}
+
 
 //
 // P_BringUpWeapon
@@ -262,11 +284,15 @@ dboolean P_CheckAmmo(player_t *player)
   ammotype_t ammo = weaponinfo[player->readyweapon].ammo;
   int count = 1;  // Regular
 
-  if (player->readyweapon == wp_bfg)  // Minimal amount for one shot varies.
-    count = BFGCELLS;
-  else
-    if (player->readyweapon == wp_supershotgun)        // Double barrel.
-      count = 2;
+  if (mbf21_features && (weaponinfo[player->readyweapon].ammopershot != WP_DEFAULT_AMMO_PER_SHOT)) {
+      count = weaponinfo[player->readyweapon].ammopershot;
+  } else {
+      if (player->readyweapon == wp_bfg)  // Minimal amount for one shot varies.
+          count = BFGCELLS;
+      else
+          if (player->readyweapon == wp_supershotgun)        // Double barrel.
+              count = 2;
+  }
 
   // Some do not need ammunition anyway.
   // Return if current ammunition sufficient.
@@ -305,7 +331,8 @@ static void P_FireWeapon(player_t *player)
   P_SetMobjState(player->mo, S_PLAY_ATK1);
   newstate = weaponinfo[player->readyweapon].atkstate;
   P_SetPsprite(player, ps_weapon, newstate);
-  P_NoiseAlert(player->mo, player->mo);
+  if (!(mbf21_features && (weaponinfo[player->readyweapon].mbf21weaponflags & WF_SILENT)))
+      P_NoiseAlert(player->mo, player->mo);
 }
 
 //
@@ -357,8 +384,14 @@ void A_WeaponReady(player_t *player, pspdef_t *psp)
 
   if (player->cmd.buttons & BT_ATTACK)
     {
-      if (!player->attackdown || ((player->readyweapon != wp_missile || C_CvarIsSet("autofire_rocketlauncher")) &&
-                                  (player->readyweapon != wp_bfg || C_CvarIsSet("autofire_bfg"))))
+      if (!player->attackdown ||
+              // These PrBoomX CVARs override Doom behavior, including MBF21
+              (player->readyweapon == wp_missile && C_CvarIsSet("autofire_rocketlauncher"))
+              ||
+              (player->readyweapon == wp_bfg && C_CvarIsSet("autofire_bfg"))
+              ||
+              (!(weaponinfo[player->readyweapon].mbf21weaponflags & WF_NOAUTOFIRE))
+         )
         {
           player->attackdown = true;
           P_FireWeapon(player);
@@ -544,11 +577,11 @@ void A_Punch(player_t *player, pspdef_t *psp)
 
   /* killough 8/2/98: make autoaiming prefer enemies */
   if (!mbf_features ||
-      (slope = P_AimLineAttack(player->mo, angle, MELEERANGE, MF_FRIEND),
+      (slope = P_AimLineAttack(player->mo, angle, mobjinfo[MT_PLAYER].meleerange, MF_FRIEND),
        !linetarget))
-    slope = P_AimLineAttack(player->mo, angle, MELEERANGE, 0);
+    slope = P_AimLineAttack(player->mo, angle, mobjinfo[MT_PLAYER].meleerange, 0);
 
-  P_LineAttack(player->mo, angle, MELEERANGE, slope, damage);
+  P_LineAttack(player->mo, angle, mobjinfo[MT_PLAYER].meleerange, slope, damage);
 
   if (!linetarget)
     return;
@@ -583,11 +616,11 @@ void A_Saw(player_t *player, pspdef_t *psp)
   /* Use meleerange + 1 so that the puff doesn't skip the flash
    * killough 8/2/98: make autoaiming prefer enemies */
   if (!mbf_features ||
-      (slope = P_AimLineAttack(player->mo, angle, MELEERANGE+1, MF_FRIEND),
+      (slope = P_AimLineAttack(player->mo, angle, mobjinfo[MT_PLAYER].meleerange+1, MF_FRIEND),
        !linetarget))
-    slope = P_AimLineAttack(player->mo, angle, MELEERANGE+1, 0);
+    slope = P_AimLineAttack(player->mo, angle, mobjinfo[MT_PLAYER].meleerange+1, 0);
 
-  P_LineAttack(player->mo, angle, MELEERANGE+1, slope, damage);
+  P_LineAttack(player->mo, angle, mobjinfo[MT_PLAYER].meleerange+1, slope, damage);
 
   if (!linetarget)
     {
@@ -624,8 +657,9 @@ void A_Saw(player_t *player, pspdef_t *psp)
 void A_FireMissile(player_t *player, pspdef_t *psp)
 {
   CHECK_WEAPON_CODEPOINTER("A_FireMissile", player);
+ 
+  P_UseAmmo(player, 1);
 
-  player->ammo[weaponinfo[player->readyweapon].ammo]--;
   P_SpawnPlayerMissile(player->mo, MT_ROCKET);
 }
 
@@ -637,7 +671,8 @@ void A_FireBFG(player_t *player, pspdef_t *psp)
 {
   CHECK_WEAPON_CODEPOINTER("A_FireBFG", player);
 
-  player->ammo[weaponinfo[player->readyweapon].ammo] -= BFGCELLS;
+  P_UseAmmo(player, BFGCELLS);
+
   P_SpawnPlayerMissile(player->mo, MT_BFG);
 }
 
@@ -664,7 +699,7 @@ void A_FireOldBFG(player_t *player, pspdef_t *psp)
     P_Thrust(player, ANG180 + player->mo->angle,
     512*recoil_values[wp_plasma]);
 
-  player->ammo[weaponinfo[player->readyweapon].ammo]--;
+  P_UseAmmo(player, 1);
 
   player->extralight = 2;
 
@@ -715,7 +750,7 @@ void A_FirePlasma(player_t *player, pspdef_t *psp)
 {
   CHECK_WEAPON_CODEPOINTER("A_FirePlasma", player);
 
-  player->ammo[weaponinfo[player->readyweapon].ammo]--;
+  P_UseAmmo(player, 1);
 
   A_FireSomething(player,P_Random(pr_plasma)&1);              // phares
   P_SpawnPlayerMissile(player->mo, MT_PLASMA);
@@ -782,7 +817,7 @@ void A_FirePistol(player_t *player, pspdef_t *psp)
   S_StartSound(player->mo, sfx_pistol);
 
   P_SetMobjState(player->mo, S_PLAY_ATK2);
-  player->ammo[weaponinfo[player->readyweapon].ammo]--;
+  P_UseAmmo(player, 1);
 
   A_FireSomething(player,0);                                      // phares
   P_BulletSlope(player->mo);
@@ -802,7 +837,7 @@ void A_FireShotgun(player_t *player, pspdef_t *psp)
   S_StartSound(player->mo, sfx_shotgn);
   P_SetMobjState(player->mo, S_PLAY_ATK2);
 
-  player->ammo[weaponinfo[player->readyweapon].ammo]--;
+  P_UseAmmo(player, 1);
 
   A_FireSomething(player,0);                                      // phares
 
@@ -824,7 +859,7 @@ void A_FireShotgun2(player_t *player, pspdef_t *psp)
 
   S_StartSound(player->mo, sfx_dshtgn);
   P_SetMobjState(player->mo, S_PLAY_ATK2);
-  player->ammo[weaponinfo[player->readyweapon].ammo] -= 2;
+  P_UseAmmo(player, 2);
 
   A_FireSomething(player,0);                                      // phares
 
@@ -858,7 +893,7 @@ void A_FireCGun(player_t *player, pspdef_t *psp)
     return;
 
   P_SetMobjState(player->mo, S_PLAY_ATK2);
-  player->ammo[weaponinfo[player->readyweapon].ammo]--;
+  P_UseAmmo(player, 1);
 
   A_FireSomething(player,psp->state - &states[S_CHAIN1]);           // phares
 
@@ -972,4 +1007,326 @@ void P_MovePsprites(player_t *player)
 
   player->psprites[ps_flash].sx = player->psprites[ps_weapon].sx;
   player->psprites[ps_flash].sy = player->psprites[ps_weapon].sy;
+}
+
+#define PSP_STATE_ARG_OR_DEFAULT(pspname, argnum, defaultvalue) (((pspname)->state->stateargsdefined[(argnum)]) ? ((pspname)->state->stateargs[(argnum)]) : (defaultvalue))
+
+void A_WeaponProjectile(player_t *player, pspdef_t *psp)
+{
+    unsigned int type; // Type (dehnum) of actor to spawn
+    fixed_t angle; // Angle (degrees), relative to player's angle
+    fixed_t pitch; // Pitch (degrees), relative to player's pitch
+    fixed_t hoffset; // Horizontal spawn offset, relative to player's angle
+    fixed_t voffset; // Vertical spawn offset, relative to player's default projectile fire height
+    mobj_t* momissile;
+
+    angle_t newang;
+
+    if (!mbf21_features || !psp || !psp->state)
+        return;
+
+    if (!psp->state->stateargsdefined[0] || psp->state->stateargs[0] == 0)
+        return;
+
+    CHECK_WEAPON_CODEPOINTER("A_WeaponProjectile", player);
+
+    type = psp->state->stateargs[0] - 1;
+    angle = psp->state->stateargs[1];
+    pitch = psp->state->stateargs[2];
+    hoffset = psp->state->stateargs[3]; 
+    voffset = psp->state->stateargs[4]; 
+
+    momissile = P_SpawnPlayerMissile(player->mo, type);
+    if (!momissile)
+        return;
+
+    // set momentum and offset
+    momissile->angle = (momissile->angle + (angle_t)(((int_64_t)angle << 16)/360));
+
+    newang = (momissile->angle >> ANGLETOFINESHIFT);
+
+    momissile->momx = FixedMul(momissile->info->speed, finecosine[newang]);
+    momissile->momy = FixedMul(momissile->info->speed, finesine[newang]);
+
+    // using pitch * sine wasn't matching other ports, so adapted from here:
+    // https://github.com/fabiangreffrath/woof/blob/c1b7f387e7da7a88c35ed119b6ed21fe0438cede/src/p_enemy.c#L2977
+    momissile->momz += FixedMul(momissile->info->speed, DegToSlope(pitch));
+
+    newang = (player->mo->angle - ANG90) >> ANGLETOFINESHIFT;
+    momissile->x += FixedMul(hoffset, finecosine[newang]);
+    momissile->y += FixedMul(hoffset, finesine[newang]);
+    momissile->z += voffset;
+
+    P_SetTarget(&momissile->tracer, linetarget);
+}
+
+void A_WeaponBulletAttack(player_t *player, pspdef_t *psp)
+{
+    fixed_t hspread; // Horizontal spread (degrees, in fixed point)
+    fixed_t vspread; // Vertical spread (degrees, in fixed point)
+    unsigned int numbullets; // Number of bullets to fire; if not set, defaults to 1
+    unsigned int damagebase; // Base damage of attack; if not set, defaults to 5
+    unsigned int damagedice; // Attack damage random multiplier; if not set, defaults to 3
+
+    int angle;
+    int bullet_angle;
+    fixed_t bullet_slope;
+    int i;
+    int t1, t2, t3, t4;
+    int bullet_damage;
+    int_64_t max_offset_h;
+    int_64_t max_offset_v;
+    int bullet_pitch;
+
+    if (!mbf21_features || !psp->state)
+        return;
+
+    CHECK_WEAPON_CODEPOINTER("A_WeaponBulletAttack", player);
+
+    hspread = psp->state->stateargs[0];
+    vspread = psp->state->stateargs[1];
+
+    numbullets = (unsigned int) PSP_STATE_ARG_OR_DEFAULT(psp, 2, 1);
+    damagebase = (unsigned int) PSP_STATE_ARG_OR_DEFAULT(psp, 3, 5);
+    damagedice = (unsigned int) PSP_STATE_ARG_OR_DEFAULT(psp, 4, 3); 
+
+    P_BulletSlope(player->mo);
+
+    // don't use negative spread values
+    if (hspread < 0)
+        hspread *= -1;
+
+    if (vspread < 0)
+        vspread *= -1;
+
+    angle = player->mo->angle;
+    max_offset_h = (int_64_t)(((uint_64_t)hspread * ANG1) >> FRACBITS);
+    max_offset_v = (int_64_t)(((uint_64_t)vspread * ANG1) >> FRACBITS);
+    for (i = 0; i < numbullets; i++) {
+        t1 = P_Random(pr_mbf21);
+        t2 = P_Random(pr_mbf21);
+        t3 = P_Random(pr_mbf21);
+        t4 = P_Random(pr_mbf21);
+
+        bullet_angle = angle + (angle_t)((max_offset_h * (t1 - t2)) / 255);
+        bullet_pitch = (angle_t)((max_offset_v * (t3 - t4)) / 255);
+        bullet_slope = bulletslope;
+
+        // originally i missed that i need to clamp the range here
+        if (bullet_pitch > ANG90)
+            bullet_slope += finetangent[0];
+        else if (-bullet_pitch > ANG90)
+            bullet_slope += finetangent[FINEANGLES/2-1];
+        else
+            bullet_slope += finetangent[(ANG90 - bullet_pitch) >> ANGLETOFINESHIFT];
+
+        bullet_damage = (P_Random(pr_mbf21)%damagedice + 1)*damagebase;
+
+        P_LineAttack(player->mo, bullet_angle, MISSILERANGE, bullet_slope, bullet_damage);
+    }
+}
+
+void A_WeaponMeleeAttack(player_t *player, pspdef_t *psp)
+{
+    unsigned int damagebase; // Base damage of attack; if not set, defaults to 2
+    unsigned int damagedice; // Attack damage random multiplier; if not set, defaults to 10
+    fixed_t zerkfactor; // Berserk damage multiplier; if not set, defaults to 1.0
+    unsigned int sound; // Sound index to play if attack hits
+    fixed_t range; // Attack range; if not set, defaults to player mobj's melee range property
+
+    unsigned int damage;
+    angle_t angle;
+    int t;
+    int slope;
+
+    if (!mbf21_features || !psp->state)
+        return;
+
+    CHECK_WEAPON_CODEPOINTER("A_WeaponMeleeAttack", player);
+
+    damagebase = (unsigned int) PSP_STATE_ARG_OR_DEFAULT(psp, 0, 2);
+    damagedice = (unsigned int) PSP_STATE_ARG_OR_DEFAULT(psp, 1, 10);
+    zerkfactor = (fixed_t) PSP_STATE_ARG_OR_DEFAULT(psp, 2, 1 << FRACBITS);
+    sound = (unsigned int) PSP_STATE_ARG_OR_DEFAULT(psp, 3, sfx_None);
+    range = (fixed_t) PSP_STATE_ARG_OR_DEFAULT(psp, 4, player->mo->info->meleerange);
+
+    damage = (P_Random(pr_mbf21)%damagedice + 1)*damagebase;
+    if (player->powers[pw_strength])
+        damage = (damage * zerkfactor) >> FRACBITS;
+
+    angle = player->mo->angle;
+
+    // killough 5/5/98: remove dependence on order of evaluation:
+    t = P_Random(pr_mbf21);
+    angle += (t - P_Random(pr_mbf21))<<18;
+
+    /* killough 8/2/98: make autoaiming prefer enemies */
+    slope = P_AimLineAttack(player->mo, angle, range, MF_FRIEND);
+
+    if(!linetarget)
+        slope = P_AimLineAttack(player->mo, angle, range, 0);
+
+    P_LineAttack(player->mo, angle, range, slope, damage);
+
+    if (!linetarget)
+        return;
+
+    S_StartSound(player->mo, sound);
+
+    // turn to face target
+    player->mo->angle = R_PointToAngle2(player->mo->x, player->mo->y,
+            linetarget->x, linetarget->y);
+    R_SmoothPlaying_Reset(player); // e6y
+}
+
+void A_WeaponSound(player_t *player, pspdef_t *psp)
+{
+    unsigned int sound; // Sound index to play.
+    int fullvol; // If nonzero, play this sound at full volume across the entire map.
+
+    CHECK_WEAPON_CODEPOINTER("A_WeaponSound", player);
+
+    if (!mbf21_features || !psp->state)
+        return;
+
+    sound = PSP_STATE_ARG_OR_DEFAULT(psp, 0, sfx_None);
+    fullvol = psp->state->stateargs[1];
+
+    S_StartSound((fullvol ? NULL : player->mo), sound);
+}
+
+void A_WeaponJump(player_t *player, pspdef_t *psp)
+{
+    unsigned int state; // State index to jump to.
+    int chance; // Chance out of 256 to perform the jump. 0 (or below) never jumps, 256 (or higher) always jumps.
+
+    CHECK_WEAPON_CODEPOINTER("A_WeaponJump", player);
+
+    if (!mbf21_features || !psp->state)
+        return;
+
+    state = psp->state->stateargs[0];
+    chance =  psp->state->stateargs[1];
+
+    if (P_Random(pr_mbf21) < chance)
+        P_SetPspriteGeneric(player, psp, state);
+}
+
+void A_ConsumeAmmo(player_t *player, pspdef_t *psp)
+{
+    int amount; // Amount of ammo to subtract. If zero, will default to the current weapon's ammopershot value.
+    ammotype_t ammo_type;
+
+    CHECK_WEAPON_CODEPOINTER("A_ConsumeAmmo", player);
+
+    if (!mbf21_features || !psp->state)
+        return;
+
+    amount = PSP_STATE_ARG_OR_DEFAULT(psp, 0, 0);
+    ammo_type = weaponinfo[player->readyweapon].ammo;
+    if (ammo_type == am_noammo)
+        return;
+
+    if (amount == 0) {
+        if (weaponinfo[player->readyweapon].ammopershot == WP_DEFAULT_AMMO_PER_SHOT) {
+            if (player->readyweapon == wp_bfg)  // Minimal amount for one shot varies.
+                amount = BFGCELLS;
+            else if (player->readyweapon == wp_supershotgun)        // Double barrel.
+                amount = 2;
+            else
+                amount = 1;
+        } else {
+            amount = weaponinfo[player->readyweapon].ammopershot;
+        }
+    }
+
+    // use up to what's remaining, and don't go below 0
+    player->ammo[ammo_type] -= MIN(amount, player->ammo[ammo_type]);
+}
+
+void A_CheckAmmo(player_t *player, pspdef_t *psp)
+{
+    unsigned int state; // State index to jump to.
+    unsigned int amount; // Amount of ammo to check. If zero, will default to the current weapon's ammopershot value.
+    ammotype_t ammo_type;
+
+    CHECK_WEAPON_CODEPOINTER("A_CheckAmmo", player);
+
+    if (!mbf21_features || !psp->state)
+        return;
+
+    state = psp->state->stateargs[0];
+    amount = PSP_STATE_ARG_OR_DEFAULT(psp, 1, 0);
+
+    ammo_type = weaponinfo[player->readyweapon].ammo;
+    if (ammo_type == am_noammo)
+        return;
+
+    if (amount == 0) {
+        if (weaponinfo[player->readyweapon].ammopershot == WP_DEFAULT_AMMO_PER_SHOT) {
+            if (player->readyweapon == wp_bfg)  // Minimal amount for one shot varies.
+                amount = BFGCELLS;
+            else if (player->readyweapon == wp_supershotgun)        // Double barrel.
+                amount = 2;
+            else
+                amount = 1;
+        } else {
+            amount = weaponinfo[player->readyweapon].ammopershot;
+        }
+    }
+
+    if (player->ammo[ammo_type] < amount)
+        P_SetPspriteGeneric(player, psp, state);
+}
+
+void A_RefireTo(player_t *player, pspdef_t *psp)
+{
+    unsigned int state; // State index to jump to.
+    int noammocheck; // If nonzero, skip the ammo check.
+    CHECK_WEAPON_CODEPOINTER("A_RefireTo", player);
+
+    if (!mbf21_features || !psp->state)
+        return;
+
+    state = psp->state->stateargs[0];
+    noammocheck = psp->state->stateargs[1];
+
+    // Jumps to state if the fire button is currently being pressed and the weapon has enough ammo to fire.
+    if ((noammocheck || P_CheckAmmo(player))
+            &&
+        (player->cmd.buttons & BT_ATTACK)
+            &&
+        (player->pendingweapon == wp_nochange)
+            &&
+        (player->health > 0)
+        ) {
+        P_SetPspriteGeneric(player, psp, state);
+    }
+}
+
+void A_GunFlashTo(player_t *player, pspdef_t *psp)
+{
+    unsigned int state; // State index to set the flash psprite to.
+    int nothirdperson; // If nonzero, do not change the 3rd-person player sprite to the player muzzleflash state.
+
+    CHECK_WEAPON_CODEPOINTER("A_GunFlashTo", player);
+
+    if (!mbf21_features || !psp->state)
+        return;
+
+    // yay for double negatives
+    if (!nothirdperson)
+        P_SetMobjState(player->mo, S_PLAY_ATK2);
+
+    P_SetPsprite(player, ps_flash, state);
+}
+
+void A_WeaponAlert(player_t *player, pspdef_t *psp)
+{
+    CHECK_WEAPON_CODEPOINTER("A_WeaponAlert", player);
+
+    if (!mbf21_features)
+        return;
+
+    P_NoiseAlert(player->mo, player->mo);
 }

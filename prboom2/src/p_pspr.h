@@ -61,6 +61,7 @@
 #define FF_FULLBRIGHT   0x8000  /* flag in thing->frame */
 #define FF_FRAMEMASK    0x7fff
 
+#define BFGCELLS bfgcells        /* Ty 03/09/98 externalized in p_inter.c */
 /*
  * Overlay psprites are scaled shapes
  * drawn directly on the view screen,
@@ -127,4 +128,15 @@ void A_FireBFG();
 void A_BFGSpray();
 void A_FireOldBFG();
 
+// jds - mbf21 pointers
+void A_WeaponProjectile();
+void A_WeaponBulletAttack();
+void A_WeaponMeleeAttack();
+void A_WeaponSound();
+void A_WeaponJump();
+void A_ConsumeAmmo();
+void A_CheckAmmo();
+void A_RefireTo();
+void A_GunFlashTo();
+void A_WeaponAlert();
 #endif

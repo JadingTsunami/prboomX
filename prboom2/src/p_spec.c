@@ -2421,29 +2421,60 @@ void P_PlayerInSpecialSector (player_t* player)
   }
   else //jff 3/14/98 handle extended sector types for secrets and damage
   {
-    switch ((sector->special&DAMAGE_MASK)>>DAMAGE_SHIFT)
-    {
-      case 0: // no damage
-        break;
-      case 1: // 2/5 damage per 31 ticks
-        if (!player->powers[pw_ironfeet])
-          if (!(leveltime&0x1f))
-            P_DamageMobj (player->mo, NULL, NULL, 5);
-        break;
-      case 2: // 5/10 damage per 31 ticks
-        if (!player->powers[pw_ironfeet])
-          if (!(leveltime&0x1f))
-            P_DamageMobj (player->mo, NULL, NULL, 10);
-        break;
-      case 3: // 10/20 damage per 31 ticks
-        if (!player->powers[pw_ironfeet]
-            || (P_Random(pr_slimehurt)<5))  // take damage even with suit
-        {
-          if (!(leveltime&0x1f))
-            P_DamageMobj (player->mo, NULL, NULL, 20);
-        }
-        break;
-    }
+      if (mbf21_features && sector->special&ALT_DAMAGE_MASK) {
+          int i;
+          switch ((sector->special&DAMAGE_MASK)>>DAMAGE_SHIFT)
+          {
+              case 0: // Kills a player unless they have a rad suit or invulnerability
+                  if(!player->powers[pw_ironfeet] && !player->powers[pw_invulnerability])
+                      P_DamageMobj (player->mo, NULL, NULL, 10000);
+                  break;
+              case 1: // Kills a player
+                  P_DamageMobj (player->mo, NULL, NULL, 10000);
+                  break;
+              case 2: // Kills all players and exits the map (normal exit)
+                  for (i = 0; i<MAXPLAYERS; i++) {
+                      if (playeringame[i]) {
+                          P_DamageMobj (players[i].mo, NULL, NULL, 10000);
+                      }
+                  }
+                  G_ExitLevel();
+                  break;
+              case 3: // Kills all players and exits the map (secret exit)
+                  for (i = 0; i<MAXPLAYERS; i++) {
+                      if (playeringame[i]) {
+                          P_DamageMobj (players[i].mo, NULL, NULL, 10000);
+                      }
+                  }
+                  G_SecretExitLevel();
+                  break;
+          }
+      } else {
+          switch ((sector->special&DAMAGE_MASK)>>DAMAGE_SHIFT)
+          {
+              case 0: // no damage
+                  break;
+              case 1: // 2/5 damage per 31 ticks
+                  if (!player->powers[pw_ironfeet])
+                      if (!(leveltime&0x1f))
+                          P_DamageMobj (player->mo, NULL, NULL, 5);
+                  break;
+              case 2: // 5/10 damage per 31 ticks
+                  if (!player->powers[pw_ironfeet])
+                      if (!(leveltime&0x1f))
+                          P_DamageMobj (player->mo, NULL, NULL, 10);
+                  break;
+              case 3: // 10/20 damage per 31 ticks
+                  if (!player->powers[pw_ironfeet]
+                          || (P_Random(pr_slimehurt)<5))  // take damage even with suit
+                  {
+                      if (!(leveltime&0x1f))
+                          P_DamageMobj (player->mo, NULL, NULL, 20);
+                  }
+                  break;
+          }
+      }
+
     if (sector->special&SECRET_MASK)
     {
         dboolean allsecrets = false;
@@ -2877,6 +2908,7 @@ void T_Scroll(scroll_t *s)
             // non-floating, and clipped.
             thing->momx += dx;
             thing->momy += dy;
+            thing->intflags |= MIF_SCROLLING;
           }
       break;
 
@@ -2996,6 +3028,27 @@ static void P_SpawnScrollers(void)
         {
           register int s;
 
+        case 1026:
+        case 1025:
+        case 1024:
+          if (mbf21_features) {
+              accel = (special == 1026 ? 1 : 0);
+              control = (special != 1024 ? sides[*l->sidenum].sector->iSectorID : -1);
+              dx = -(sides[*l->sidenum].textureoffset) >> 3;
+              dy =  (sides[*l->sidenum].rowoffset) >> 3;
+              if (l->tag == 0 && comperr(comperr_zerotag))
+              {
+                  // jds: not defined behavior; match legacy scroller behavior
+                  Add_WallScroller(dx, dy, l, control, accel);
+              }
+              else
+              {
+                  for (s=-1; (s = P_FindLineFromLineTag(l,s)) >= 0;)
+                      if (s != i)
+                          Add_Scroller(sc_side, dx, dy, control, (lines+s)->sidenum[0], accel);
+              }
+          }
+          break;
         case 250:   // scroll effect ceiling
           for (s=-1; (s = P_FindSectorFromLineTag(l,s)) >= 0;)
             Add_Scroller(sc_ceiling, -dx, dy, control, s, accel);
@@ -3364,6 +3417,7 @@ static dboolean PIT_PushThing(mobj_t* thing)
           pushangle >>= ANGLETOFINESHIFT;
           thing->momx += FixedMul(speed,finecosine[pushangle]);
           thing->momy += FixedMul(speed,finesine[pushangle]);
+          thing->intflags |= MIF_SCROLLING;
         }
     }
   return true;
@@ -3493,6 +3547,7 @@ void T_Pusher(pusher_t *p)
             }
         thing->momx += xspeed<<(FRACBITS-PUSH_FACTOR);
         thing->momy += yspeed<<(FRACBITS-PUSH_FACTOR);
+        thing->intflags |= MIF_SCROLLING;
         }
 }
 

@@ -446,12 +446,16 @@ dboolean PIT_CheckLine (line_t* ld)
   // killough 8/10/98: allow bouncing objects to pass through as missiles
   if (!(tmthing->flags & (MF_MISSILE | MF_BOUNCES)))
     {
-      if (ld->flags & ML_BLOCKING)           // explicitly blocking everything
+      if (ld->flags & ML_BLOCKING ||           // explicitly blocking everything
+              (mbf21_features &&
+               tmthing->type == MT_PLAYER &&
+               (ld->flags & ML_BLOCKPLAYERS)))
   return tmunstuck && !untouched(ld);  // killough 8/1/98: allow escape
 
       // killough 8/9/98: monster-blockers don't affect friends
       if (!(tmthing->flags & MF_FRIEND || tmthing->player)
-    && ld->flags & ML_BLOCKMONSTERS)
+    && ((ld->flags & ML_BLOCKMONSTERS) ||
+        (mbf21_features && (ld->flags & ML_BLOCKLANDMONSTERS) && !(tmthing->flags & MF_FLOAT))))
   return false; // block monsters only
     }
 
@@ -601,7 +605,23 @@ static dboolean PIT_CheckThing(mobj_t *thing) // killough 3/26/98: make static
       if (tmthing->z+tmthing->height < thing->z)
   return true;    // underneath
 
-      if (tmthing->target && (tmthing->target->type == thing->type ||
+      // jds - mbf21 projectile grouping
+      if (mbf21_features &&
+              tmthing->target &&
+              mobjinfo[thing->type].projectilegroup != MBF21_PROJECTILE_GROUP_DEFAULT
+         ) {
+          if (thing == tmthing->target) // don't hurt yourself
+              return true;
+          // thing was assigned to a non-default projectile group,
+          // check for projectile immunity
+          if (mobjinfo[thing->type].projectilegroup > 0 &&
+              (mobjinfo[tmthing->target->type].projectilegroup ==
+              mobjinfo[thing->type].projectilegroup)) {
+              // this has mbf21-enabled group immunity
+              // stop tracking and do not do any damage
+              return false;
+          } // if negative, NO immunity, explode and do damage
+      } else if (tmthing->target && (tmthing->target->type == thing->type ||
     (tmthing->target->type == MT_KNIGHT && thing->type == MT_BRUISER)||
     (tmthing->target->type == MT_BRUISER && thing->type == MT_KNIGHT)))
       {
@@ -633,6 +653,19 @@ static dboolean PIT_CheckThing(mobj_t *thing) // killough 3/26/98: make static
 
       if (!(thing->flags & MF_SHOOTABLE))
   return !(thing->flags & MF_SOLID); // didn't do any damage
+
+      // jds - mbf21 rippers
+      if (mbf21_features && (tmthing->mbf21flags & MF2_RIP)) {
+          if (tmthing->info->ripsound != sfx_None)
+              S_StartSound(tmthing, tmthing->info->ripsound);
+
+          damage = ((P_Random(pr_mbf21)&3)+2)*tmthing->info->damage;
+          P_DamageMobj (thing, tmthing, tmthing->target, damage);
+          if (!(thing->flags & MF_NOBLOOD))
+              P_SpawnBlood(tmthing->x, tmthing->y, tmthing->z, damage, thing);
+          numspechit = 0;
+          return true; // keep ripping
+      }
 
       // damage / explode
 
@@ -830,6 +863,8 @@ dboolean P_CheckPosition (mobj_t* thing,fixed_t x,fixed_t y)
   yh = P_GetSafeBlockY(tmbbox[BOXTOP] - bmaporgy + MAXRADIUS);
 
 
+  if (mbf21_features)
+      validcount++;
   for (bx=xl ; bx<=xh ; bx++)
     for (by=yl ; by<=yh ; by++)
       if (!P_BlockThingsIterator(bx,by,PIT_CheckThing))
@@ -906,7 +941,10 @@ dboolean P_TryMove(mobj_t* thing,fixed_t x,fixed_t y,
        * killough 11/98: Improve symmetry of clipping on stairs
        */
       if (!(thing->flags & (MF_DROPOFF|MF_FLOAT))) {
-  if (comp[comp_dropoff])
+        dboolean mbf21_ledgeblock = (mbf21_features && (comp[comp_ledgeblock] && !(thing->intflags & MIF_SCROLLING)));
+
+
+  if (comp[comp_dropoff] || mbf21_ledgeblock)
     {
       // e6y
       // Fix demosync bug in mbf compatibility mode
@@ -916,7 +954,7 @@ dboolean P_TryMove(mobj_t* thing,fixed_t x,fixed_t y,
       // Links:
       // http://competn.doom2.net/pub/sda/t-z/v2-2822.zip
       // http://www.doomworld.com/idgames/index.php?id=11138
-      if ((compatibility || !dropoff 
+      if ((mbf21_ledgeblock || compatibility || !dropoff 
             || (!prboom_comp[PC_NO_DROPOFF].state && mbf_features && compatibility_level <= prboom_2_compatibility))
           && (tmfloorz - tmdropoffz > 24*FRACUNIT))
         return false;                      // don't stand over a dropoff
@@ -1898,7 +1936,8 @@ void P_UseLines (player_t*  player)
 mobj_t *bombsource, *bombspot;
 //e6y static 
 int bombdamage;
-
+// jds mbf21
+int bombradius;
 
 //
 // PIT_RadiusAttack
@@ -1922,13 +1961,28 @@ dboolean PIT_RadiusAttack (mobj_t* thing)
   // Boss spider and cyborg
   // take no damage from concussion.
 
+  // jds - mbf21 splash damage groups
+  // if source and target are in the same splash group,
+  // then don't apply any splash damage
+  if (mbf21_features &&
+          bombspot &&
+          mobjinfo[thing->type].splashgroup != MBF21_SPLASH_GROUP_DEFAULT &&
+          mobjinfo[thing->type].splashgroup == mobjinfo[bombspot->type].splashgroup) {
+      return true;
+  }
+
   // killough 8/10/98: allow grenades to hurt anyone, unless
   // fired by Cyberdemons, in which case it won't hurt Cybers.
 
-  if (bombspot->flags & MF_BOUNCES ?
-      thing->type == MT_CYBORG && bombsource->type == MT_CYBORG :
-      thing->type == MT_CYBORG || thing->type == MT_SPIDER)
-    return true;
+  if (bombspot->flags & MF_BOUNCES) {
+      if (thing->type == MT_CYBORG && bombsource->type == MT_CYBORG) {
+          return true;
+      }
+  // jds - mbf21 flags for splash immunity / forcing ("BOSS" flag grants splash immunity)
+  } else if ((thing->mbf21flags & (MF2_NORADIUSDMG | MF2_BOSS)) &&
+            !(thing->mbf21flags & (MF2_FORCERADIUSDMG))) {
+      return true;
+  }
 
   dx = D_abs(thing->x - bombspot->x);
   dy = D_abs(thing->y - bombspot->y);
@@ -1937,26 +1991,29 @@ dboolean PIT_RadiusAttack (mobj_t* thing)
   dist = (dist - thing->radius) >> FRACBITS;
 
   if (dist < 0)
-  dist = 0;
+      dist = 0;
 
-  if (dist >= bombdamage)
+  if (dist >= bombradius)
     return true;  // out of range
 
   if ( P_CheckSight (thing, bombspot) )
     {
-    // must be in direct path
-    P_DamageMobj (thing, bombspot, bombsource, bombdamage - dist);
+        int damage;
+
+        if (bombdamage == bombradius) {
+            damage = bombdamage - dist;
+        } else {
+            // scale damage linearly across the radius
+            damage = (bombdamage * (bombradius - dist)/bombradius) + 1;
+        }
+        // must be in direct path
+        P_DamageMobj (thing, bombspot, bombsource, damage);
     }
 
   return true;
 }
 
-
-//
-// P_RadiusAttack
-// Source is the creature that caused the explosion at spot.
-//
-void P_RadiusAttack(mobj_t* spot,mobj_t* source,int damage)
+void P_RadiusAttackCustomRadius(mobj_t* spot,mobj_t* source,int damage,int radius)
 {
   int x;
   int y;
@@ -1968,7 +2025,7 @@ void P_RadiusAttack(mobj_t* spot,mobj_t* source,int damage)
 
   fixed_t dist;
 
-  dist = (damage+MAXRADIUS)<<FRACBITS;
+  dist = (radius+MAXRADIUS)<<FRACBITS;
   yh = P_GetSafeBlockY(spot->y + dist - bmaporgy);
   yl = P_GetSafeBlockY(spot->y - dist - bmaporgy);
   xh = P_GetSafeBlockX(spot->x + dist - bmaporgx);
@@ -1976,10 +2033,21 @@ void P_RadiusAttack(mobj_t* spot,mobj_t* source,int damage)
   bombspot = spot;
   bombsource = source;
   bombdamage = damage;
+  bombradius = radius;
 
   for (y=yl ; y<=yh ; y++)
     for (x=xl ; x<=xh ; x++)
       P_BlockThingsIterator (x, y, PIT_RadiusAttack );
+
+}
+
+//
+// P_RadiusAttack
+// Source is the creature that caused the explosion at spot.
+//
+void P_RadiusAttack(mobj_t* spot,mobj_t* source,int damage)
+{
+    P_RadiusAttackCustomRadius(spot, source, damage, damage);
 }
 
 

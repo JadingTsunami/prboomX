@@ -45,6 +45,7 @@
 #include "hu_stuff.h"
 #include "i_sound.h"
 #include "g_game.h"
+#include "info.h"
 
 #include "p_inter.h"
 #include "p_enemy.h"
@@ -131,6 +132,56 @@ static dboolean P_GiveAmmo(player_t *player, ammotype_t ammo, int num)
 
   if (player->ammo[ammo] > player->maxammo[ammo])
     player->ammo[ammo] = player->maxammo[ammo];
+
+  // jds - at this point, mbf21 handling is different
+  // from the spec:
+  // https://github.com/kraflab/mbf21/blob/master/docs/spec.md
+  // If the current weapon is enabled for AUTOSWITCHFROM and the player picks up ammo for a different weapon, autoswitch will occur for the highest ranking weapon (by index) matching these conditions:
+  //   player has the weapon
+  //   weapon is not flagged with NOAUTOSWITCHTO
+  //   weapon uses the ammo that was picked up
+  //   player did not have enough ammo to fire the weapon before
+  //   player now has enough ammo to fire the weapon
+  if (mbf21_features) {
+      int wi;
+      weaponinfo_t current_weaponinfo = weaponinfo[player->readyweapon];
+      weaponinfo_t candidate_weaponinfo;
+      
+      // current weapon allows switching AND
+      // player picked up ammo for a different weapon
+      if ((current_weaponinfo.mbf21weaponflags & WF_AUTOSWITCHFROM) &&
+              current_weaponinfo.ammo != ammo) {
+          // hunt for a new weapon in descending index order
+          for (wi = NUMWEAPONS - 1; wi > player->readyweapon; wi--) {
+              if (!(player->weaponowned[wi]))
+                  continue;
+              
+              candidate_weaponinfo = weaponinfo[wi];
+              if (!(candidate_weaponinfo.mbf21weaponflags & WF_NOAUTOSWITCHTO) &&
+                      candidate_weaponinfo.ammo == ammo) {
+                  int ammo_per_shot = 1;
+
+                  if (candidate_weaponinfo.ammopershot != WP_DEFAULT_AMMO_PER_SHOT) {
+                      ammo_per_shot = candidate_weaponinfo.ammopershot;
+                  } else if (wi == wp_bfg) {
+                      ammo_per_shot = BFGCELLS;
+                  } else if (wi == wp_supershotgun) {
+                      ammo_per_shot = 2;
+                  }
+
+                  // player didn't have enough ammo 
+                  if (ammo_per_shot > oldammo &&
+                        // but now the player does
+                        player->ammo[ammo] >= ammo_per_shot) {
+                      player->pendingweapon = wi;
+                      break;
+                  }
+              }
+          }
+      }
+
+      return true;
+  }
 
   // If non zero ammo, don't change up weapons, player was lower on purpose.
   if (oldammo)
@@ -690,8 +741,8 @@ static void P_KillMobj(mobj_t *source, mobj_t *target)
   target->flags |= MF_CORPSE|MF_DROPOFF;
   target->height >>= 2;
 
-  if (compatibility_level == mbf_compatibility && 
-      !prboom_comp[PC_MBF_REMOVE_THINKER_IN_KILLMOBJ].state)
+  if (mbf21_features || (compatibility_level == mbf_compatibility && 
+      !prboom_comp[PC_MBF_REMOVE_THINKER_IN_KILLMOBJ].state))
   {
     // killough 8/29/98: remove from threaded list
     P_UpdateThinker(&target->thinker);
@@ -903,7 +954,12 @@ void P_DamageMobj(mobj_t *target,mobj_t *inflictor, mobj_t *source, int damage)
 
   if (inflictor && !(target->flags & MF_NOCLIP) &&
       (!source || !source->player ||
-       source->player->readyweapon != wp_chainsaw))
+       source->player->readyweapon != wp_chainsaw)
+      &&
+      !(mbf21_features && (
+              source &&
+              source->player &&
+              weaponinfo[source->player->readyweapon].mbf21weaponflags & WF_NOTHRUST)))
     {
       unsigned ang = R_PointToAngle2 (inflictor->x, inflictor->y,
                                       target->x,    target->y);
@@ -1076,11 +1132,14 @@ void P_DamageMobj(mobj_t *target,mobj_t *inflictor, mobj_t *source, int damage)
   /* killough 9/9/98: cleaned up, made more consistent: */
   //e6y: Monsters could commit suicide in Doom v1.2 if they damaged themselves by exploding a barrel
   if (source && (source != target || compatibility_level == doom_12_compatibility) &&
-      source->type != MT_VILE &&
-      (!target->threshold || target->type == MT_VILE) &&
-      ((source->flags ^ target->flags) & MF_FRIEND ||
-       monster_infighting ||
-       !mbf_features))
+      (!target->threshold || (target->mbf21flags & MF2_NOTHRESHOLD)) &&
+      ((source->flags ^ target->flags) & MF_FRIEND || monster_infighting || !mbf_features) &&
+       !(mbf21_features &&
+        (mobjinfo[source->type].infightinggroup != MBF21_INFIGHTING_GROUP_DEFAULT) &&
+        (mobjinfo[source->type].infightinggroup == mobjinfo[target->type].infightinggroup)
+       ) &&
+       !(source->mbf21flags & MF2_DMGIGNORED)
+     )
     {
       /* if not intent on another player, chase after this one
        *

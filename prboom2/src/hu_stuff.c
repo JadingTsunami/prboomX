@@ -2434,7 +2434,7 @@ void HU_draw_crosshair(void)
     
     // intercepts overflow guard
     overflows_enabled = false;
-    range = (ammo == am_noammo) ? MELEERANGE : 16*64*FRACUNIT;
+    range = (ammo == am_noammo) ? mobjinfo[MT_PLAYER].meleerange : 16*64*FRACUNIT;
     slope = P_AimLineAttack(plr->mo, an, range, 0);
     if (ammo == am_misl || ammo == am_cell)
     {

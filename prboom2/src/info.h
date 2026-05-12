@@ -38,6 +38,14 @@
 
 /* Needed for action function pointer handling. */
 #include "d_think.h"
+#include "m_fixed.h"
+
+// jds - mbf21 defaults for new mobjinfo fields
+#define MBF21_INFIGHTING_GROUP_DEFAULT (-1)
+#define MBF21_PROJECTILE_GROUP_DEFAULT (0)
+#define MBF21_SPLASH_GROUP_DEFAULT (-1)
+#define MBF21_FAST_SPEED_DEFAULT (-1)
+
 
 /********************************************************************
  * Sprite name enumeration - must match info.c                      *
@@ -1279,6 +1287,14 @@ typedef enum
  * Definition of the state (frames) structure                       *
  ********************************************************************/
 
+// mbf21 fixed by spec
+#define NUM_STATE_ARGS 8
+#define MOBJ_STATE_ARG_OR_DEFAULT(mo, argnum, defaultvalue) (((mo)->state->stateargsdefined[(argnum)]) ? ((mo)->state->stateargs[(argnum)]) : (defaultvalue))
+
+// mbf21 state flags
+// Tics halve on nightmare skill (demon)
+#define STF_SKILL5FAST 0x001
+
 typedef struct
 {
   spritenum_t sprite;       /* sprite number to show                       */
@@ -1287,6 +1303,9 @@ typedef struct
   actionf_t   action;       /* code pointer to function for action if any  */
   statenum_t  nextstate;    /* linked list pointer to next state or zero   */
   long        misc1, misc2; /* apparently never used in DOOM               */
+  int_64_t    stateargs[NUM_STATE_ARGS];
+  dboolean    stateargsdefined[NUM_STATE_ARGS];
+  int         mbf21stateflags;
 } state_t;
 
 /* these are in info.c */
@@ -1544,6 +1563,16 @@ typedef struct
            back to life. */
   mobjtype_t droppeditem; /* ferk: Mobj to drop after death */
   int bloodcolor; /* [FG] colored blood and gibs */
+
+  // jds - mbf21
+  int infightinggroup;
+  int projectilegroup;
+  int splashgroup;
+  uint_64_t mbf21flags;
+  int ripsound;
+  int fastspeed;
+  fixed_t meleerange;
+
 } mobjinfo_t;
 
 /* See p_mobj_h for addition more technical info */

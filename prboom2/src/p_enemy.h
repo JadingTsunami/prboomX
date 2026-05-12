@@ -37,6 +37,7 @@
 #define __P_ENEMY__
 
 #include "p_mobj.h"
+#include "sounds.h"
 
 void P_NoiseAlert (mobj_t *target, mobj_t *emmiter);
 void P_SpawnBrainTargets(void); /* killough 3/26/98: spawn icon landings */
@@ -119,5 +120,27 @@ void A_BetaSkullAttack(mobj_t *); // killough 10/98: beta lost souls attacked di
 void A_Stop(mobj_t *);
 
 void A_SkullPop(mobj_t *);
+
+void A_HealChaseGeneric(mobj_t* actor, int radius, statenum_t healstate, sfxenum_t healsound);
+
+//mbf21 pointers
+void A_SpawnObject(mobj_t *);
+void A_MonsterProjectile(mobj_t* mo);
+void A_MonsterBulletAttack(mobj_t* mo);
+void A_MonsterMeleeAttack(mobj_t* mo);
+void A_RadiusDamage(mobj_t* mo);
+void A_NoiseAlert(mobj_t* mo);
+void A_HealChase(mobj_t* mo);
+void A_SeekTracer(mobj_t* mo);
+void A_FindTracer(mobj_t* mo);
+void A_ClearTracer(mobj_t* mo);
+void A_JumpIfHealthBelow(mobj_t* mo);
+void A_JumpIfTargetInSight(mobj_t* mo);
+void A_JumpIfTargetCloser(mobj_t* mo);
+void A_JumpIfTracerInSight(mobj_t* mo);
+void A_JumpIfTracerCloser(mobj_t* mo);
+void A_JumpIfFlagsSet(mobj_t* mo);
+void A_AddFlags(mobj_t* mo);
+void A_RemoveFlags(mobj_t* mo);
 
 #endif // __P_ENEMY__

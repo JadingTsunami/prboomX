@@ -141,7 +141,12 @@ typedef struct {
 
 //jff 3/21/98 Set if line absorbs use by player
 //allow multiple push/switch triggers to be used on one push
-#define ML_PASSUSE      512
+#define ML_PASSUSE              512
+
+//jds: mbf21 blocking linedef types
+#define ML_BLOCKLANDMONSTERS    4096
+#define ML_BLOCKPLAYERS         8192
+
 
 // Sector definition, from editing.
 typedef struct {

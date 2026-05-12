@@ -435,6 +435,12 @@ default_t defaults[] =
   {"comp_skytransfers",{&comp_skytransfers},{0},0,1,def_bool,ss_comp},
   {"comp_fix_blockmap",{&comp_fix_blockmap},{0},0,1,def_bool,ss_comp},
 
+  //mbf21
+  {"comp_ledgeblock",{&default_comp[comp_ledgeblock]},{0},0,1,def_bool,ss_comp,&comp[comp_ledgeblock]},
+  {"comp_friendlyspawn",{&default_comp[comp_friendlyspawn]},{0},0,1,def_bool,ss_comp,&comp[comp_friendlyspawn]},
+  {"comp_voodooscroller",{&default_comp[comp_voodooscroller]},{0},0,1,def_bool,ss_comp,&comp[comp_voodooscroller]},
+  {"comp_reservedlineflag",{&default_comp[comp_reservedlineflag]},{0},0,1,def_bool,ss_comp,&comp[comp_reservedlineflag]},
+
   {"Sound settings",{NULL},{0},UL,UL,def_none,ss_none},
   {"snd_pcspeaker",{&snd_pcspeaker},{0}, 0, 1, def_bool,ss_none},
   {"sound_card",{&snd_card},{-1},-1,7,       // jff 1/18/98 allow Allegro drivers

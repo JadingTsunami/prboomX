@@ -50,6 +50,7 @@
 #include "m_argv.h"
 #include "m_misc.h"
 #include "e6y.h"//e6y
+#include "p_map.h"
 
 // CPhipps - modify to use logical output routine
 #include "lprintf.h"
@@ -1057,7 +1058,7 @@ typedef struct
 // killough 8/9/98: make DEH_BLOCKMAX self-adjusting
 #define DEH_BLOCKMAX (sizeof deh_blocks/sizeof*deh_blocks)  // size of array
 #define DEH_MAXKEYLEN 32 // as much of any key as we'll look at
-#define DEH_MOBJINFOMAX 26 // number of ints in the mobjinfo_t structure (!)
+#define DEH_MOBJINFOMAX 33 // number of ints in the mobjinfo_t structure (!)
 
 // Put all the block header values, and the function to be called when that
 // one is encountered, in this array:
@@ -1124,6 +1125,13 @@ static const char *deh_mobjinfo[DEH_MOBJINFOMAX] =
   "Respawn frame",       // .raisestate
   "Dropped item",        // .droppeditem
   "Blood color",         // .bloodcolor
+  "Infighting group",    // .infightinggroup
+  "Projectile group",    // .profectilengroup
+  "Splash group",        // .splashgroup
+  "MBF21 Bits",          // .mbf21flags
+  "Rip sound",           // .ripsound
+  "Fast speed",          // .fastspeed
+  "Melee range",         // .meleerange
 };
 
 // Strings that are used to indicate flags ("Bits" in mobjinfo)
@@ -1141,6 +1149,8 @@ struct deh_mobjflags_s {
   const char *name; // CPhipps - const*
   uint_64_t value;
 };
+
+typedef struct deh_mobjflags_s deh_weaponflags_s;
 
 // CPhipps - static const
 static const struct deh_mobjflags_s deh_mobjflags[] = {
@@ -1186,6 +1196,41 @@ static const struct deh_mobjflags_s deh_mobjflags[] = {
   {"FRIEND",       MF_FRIEND},       // a friend of the player(s) (MBF)
 };
 
+#define DEH_MBF21_MOBJFLAGMAX (sizeof deh_mobjflags_mbf21/sizeof*deh_mobjflags_mbf21)
+static const struct deh_mobjflags_s deh_mobjflags_mbf21[] = {
+    {"LOGRAV",         MF2_LOGRAV}, 	        // Lower gravity (1/8)
+    {"SHORTMRANGE",    MF2_SHORTMRANGE}, 	    // Short missile range (archvile)
+    {"DMGIGNORED",     MF2_DMGIGNORED}, 	    // Other things ignore its attacks (archvile)
+    {"NORADIUSDMG",    MF2_NORADIUSDMG}, 	    // Doesn't take splash damage (cyberdemon,                       mastermind)
+    {"FORCERADIUSDMG", MF2_FORCERADIUSDMG}, 	// Thing causes splash damage even if the target shouldn't
+    {"HIGHERMPROB",    MF2_HIGHERMPROB}, 	    // Higher missile attack probability (cyberdemon)
+    {"RANGEHALF",      MF2_RANGEHALF}, 	        // Use half distance for missile attack probability (cyberdemon, mastermind, revenant, lost soul)
+    {"NOTHRESHOLD",    MF2_NOTHRESHOLD}, 	    // Has no targeting threshold (archvile)
+    {"LONGMELEE",      MF2_LONGMELEE}, 	        // Has long melee range (revenant)
+    {"BOSS",           MF2_BOSS}, 	            // Full volume see / death sound & splash immunity (from heretic)
+    {"MAP07BOSS1",     MF2_MAP07BOSS1}, 	    // Tag 666 "boss" on doom 2 map 7 (mancubus)
+    {"MAP07BOSS2",     MF2_MAP07BOSS2}, 	    // Tag 667 "boss" on doom 2 map 7 (arachnotron)
+    {"E1M8BOSS",       MF2_E1M8BOSS}, 	        // E1M8 boss (baron)
+    {"E2M8BOSS",       MF2_E2M8BOSS}, 	        // E2M8 boss (cyberdemon)
+    {"E3M8BOSS",       MF2_E3M8BOSS}, 	        // E3M8 boss (mastermind)
+    {"E4M6BOSS",       MF2_E4M6BOSS}, 	        // E4M6 boss (cyberdemon)
+    {"E4M8BOSS",       MF2_E4M8BOSS}, 	        // E4M8 boss (mastermind)
+    {"RIP",            MF2_RIP}, 	            // Ripper projectile (does not disappear on impact)
+    {"FULLVOLSOUNDS",  MF2_FULLVOLSOUNDS}, 	    // Full volume see / death sounds (cyberdemon,                   mastermind)
+};
+
+// jds - from spec
+// https://github.com/kraflab/mbf21/blob/master/docs/spec.md
+#define DEH_MBF21_WEAPONFLAGMAX (sizeof deh_weaponflags_mbf21/sizeof*deh_weaponflags_mbf21)
+static const deh_weaponflags_s deh_weaponflags_mbf21[] = {
+    {"NOTHRUST",      WF_NOTHRUST},
+    {"SILENT",        WF_SILENT},
+    {"NOAUTOFIRE",    WF_NOAUTOFIRE},
+    {"FLEEMELEE",     WF_FLEEMELEE},
+    {"AUTOSWITCHFROM",WF_AUTOSWITCHFROM},
+    {"NOAUTOSWITCHTO",WF_NOAUTOSWITCHTO},
+};
+
 // STATE - Dehacked block name = "Frame" and "Pointer"
 // Usage: Frame nn
 // Usage: Pointer nn (Frame nn)
@@ -1205,7 +1250,18 @@ static const char *deh_state[] = // CPhipps - static const*
   // This is set in a separate "Pointer" block from Dehacked
   "Codep Frame",      // pointer to first use of action (actionf_t)
   "Unknown 1",        // .misc1 (long)
-  "Unknown 2"         // .misc2 (long)
+  "Unknown 2",        // .misc2 (long)
+  // MBF21 frame flags
+  "MBF21 Bits",
+  // New MBF21 integer args
+  "Args1",
+  "Args2",
+  "Args3",
+  "Args4",
+  "Args5",
+  "Args6",
+  "Args7",
+  "Args8"
 };
 
 // SFXINFO_STRUCT - Dehacked block name = "Sounds"
@@ -1264,7 +1320,9 @@ static const char *deh_weapon[] = // CPhipps - static const*
   "Select frame",   // .downstate
   "Bobbing frame",  // .readystate
   "Shooting frame", // .atkstate
-  "Firing frame"    // .flashstate
+  "Firing frame",   // .flashstate
+  "MBF21 Bits",     // .mbf21weaponflags
+  "Ammo per shot"   // .ammopershot
 };
 
 // CHEATS - Dehacked block name = "Cheat"
@@ -1405,6 +1463,38 @@ static const deh_bexptr deh_bexptrs[] = // CPhipps - static const
   {A_BetaSkullAttack, "A_BetaSkullAttack"}, // killough 10/98: beta lost souls attacked different
   {A_Stop,            "A_Stop"},
 
+  // jds - new mbf21 codepointers
+  {A_SpawnObject,         "A_SpawnObject"},
+  {A_MonsterProjectile,   "A_MonsterProjectile"},
+  {A_MonsterBulletAttack, "A_MonsterBulletAttack"},
+  {A_MonsterMeleeAttack,  "A_MonsterMeleeAttack"},
+  {A_RadiusDamage,        "A_RadiusDamage"},
+  {A_NoiseAlert,          "A_NoiseAlert"},
+  {A_HealChase,           "A_HealChase"},
+  {A_SeekTracer,          "A_SeekTracer"},
+  {A_FindTracer,          "A_FindTracer"},
+  {A_ClearTracer,         "A_ClearTracer"},
+  {A_JumpIfHealthBelow,   "A_JumpIfHealthBelow"},
+  {A_JumpIfTargetInSight, "A_JumpIfTargetInSight"},
+  {A_JumpIfTargetCloser,  "A_JumpIfTargetCloser"},
+  {A_JumpIfTracerInSight, "A_JumpIfTracerInSight"},
+  {A_JumpIfTracerCloser,  "A_JumpIfTracerCloser"},
+  {A_JumpIfFlagsSet,      "A_JumpIfFlagsSet"},
+  {A_AddFlags,            "A_AddFlags"},
+  {A_RemoveFlags,         "A_RemoveFlags"},
+
+  // jds - new mbf21 weapon codepointers
+  {A_WeaponProjectile,   "A_WeaponProjectile"},
+  {A_WeaponBulletAttack, "A_WeaponBulletAttack"},
+  {A_WeaponMeleeAttack,  "A_WeaponMeleeAttack"},
+  {A_WeaponSound,        "A_WeaponSound"},
+  {A_WeaponJump,         "A_WeaponJump"},
+  {A_ConsumeAmmo,        "A_ConsumeAmmo"},
+  {A_CheckAmmo,          "A_CheckAmmo"},
+  {A_RefireTo,           "A_RefireTo"},
+  {A_GunFlashTo,         "A_GunFlashTo"},
+  {A_WeaponAlert,        "A_WeaponAlert"},
+
   // This NULL entry must be the last in the list
   {NULL,              "A_NULL"},  // Ty 05/16/98
 };
@@ -1420,7 +1510,7 @@ char *deh_soundnames[NUMSFX + 1];
 
 void D_BuildBEXTables(void)
 {
-   int i;
+   int i, j;
 
    // moved from ProcessDehFile, then we don't need the static int i
    for (i = 0; i < EXTRASTATES; i++)  // remember what they start as for deh xref
@@ -1437,6 +1527,13 @@ void D_BuildBEXTables(void)
      states[i].misc1 = 0;
      states[i].misc2 = 0;
      deh_codeptr[i] = states[i].action;
+
+     // jds - mbf21 initializers
+     for (j = 0; j < NUM_STATE_ARGS; j++) {
+         states[i].stateargs[j] = 0;
+         states[i].stateargsdefined[j] = FALSE;
+     }
+     states[i].mbf21stateflags = 0;
    }
 
    for(i = 0; i < NUMSPRITES; i++)
@@ -1489,6 +1586,85 @@ void D_BuildBEXTables(void)
       default:
       mobjinfo[i].bloodcolor = 0; // Red (normal)
     }
+
+    // jds - mbf21 initialization
+    mobjinfo[i].infightinggroup = MBF21_INFIGHTING_GROUP_DEFAULT;
+    mobjinfo[i].projectilegroup = MBF21_PROJECTILE_GROUP_DEFAULT;
+    mobjinfo[i].splashgroup = MBF21_SPLASH_GROUP_DEFAULT;
+    switch (i)
+    {
+        case MT_VILE:
+            mobjinfo[i].mbf21flags = MF2_SHORTMRANGE | MF2_DMGIGNORED | MF2_NOTHRESHOLD;
+            break;
+        case MT_BRUISER:
+            mobjinfo[i].mbf21flags = MF2_E1M8BOSS;
+            break;
+        case MT_CYBORG:
+            mobjinfo[i].mbf21flags = MF2_NORADIUSDMG | MF2_HIGHERMPROB | MF2_RANGEHALF | MF2_E2M8BOSS | MF2_E4M6BOSS | MF2_FULLVOLSOUNDS;
+            break;
+        case MT_SPIDER:
+            mobjinfo[i].mbf21flags = MF2_NORADIUSDMG | MF2_RANGEHALF | MF2_E3M8BOSS | MF2_E4M8BOSS | MF2_FULLVOLSOUNDS;
+            break;
+        case MT_SKULL:
+            mobjinfo[i].mbf21flags = MF2_RANGEHALF;
+            break;
+        case MT_FATSO:
+            mobjinfo[i].mbf21flags = MF2_MAP07BOSS1;
+            break;
+        case MT_BABY:
+            mobjinfo[i].mbf21flags = MF2_MAP07BOSS2;
+            break;
+        case MT_UNDEAD:
+            mobjinfo[i].mbf21flags = MF2_LONGMELEE | MF2_RANGEHALF;
+            break;
+        default:
+            mobjinfo[i].mbf21flags = 0;
+            break;
+    }
+    mobjinfo[i].ripsound = sfx_None;
+    switch (i)
+    {
+        case MT_BRUISERSHOT:
+        case MT_HEADSHOT:
+        case MT_TROOPSHOT:
+            mobjinfo[i].fastspeed = 20*FRACUNIT;
+            break;
+        default:
+            mobjinfo[i].fastspeed = mobjinfo[i].speed;
+            break;
+    }
+    mobjinfo[i].meleerange = MELEERANGE;
+  }
+
+  // jds - build mbf21 weapon info extra info
+  for (i = 0; i < NUMWEAPONS; i++) {
+      switch (i)
+      {
+          case wp_fist:
+              weaponinfo[i].mbf21weaponflags = (WF_FLEEMELEE | WF_AUTOSWITCHFROM | WF_NOAUTOSWITCHTO);
+              break;
+          case wp_pistol:
+              weaponinfo[i].mbf21weaponflags = (WF_AUTOSWITCHFROM);
+              break;
+          case wp_missile:
+              weaponinfo[i].mbf21weaponflags = (WF_NOAUTOFIRE);
+              break;
+          case wp_bfg:
+              weaponinfo[i].mbf21weaponflags = (WF_NOAUTOFIRE);
+              break;
+          case wp_chainsaw:
+              weaponinfo[i].mbf21weaponflags = (WF_NOTHRUST | WF_FLEEMELEE | WF_NOAUTOSWITCHTO);
+              break;
+          default:
+              weaponinfo[i].mbf21weaponflags = 0;
+              break;
+      }
+      weaponinfo[i].ammopershot = WP_DEFAULT_AMMO_PER_SHOT;
+  }
+
+  // jds - build skill5fast demon state flags
+  for (i=S_SARG_RUN1; i<=S_SARG_PAIN2; i++) {
+      states[i].mbf21stateflags |= STF_SKILL5FAST;
   }
 }
 
@@ -1921,6 +2097,43 @@ static void setMobjInfoValue(int mobjInfoIndex, int keyIndex, uint_64_t value) {
       break;
     case 24: mi->droppeditem = (int)(value-1); return; // make it base zero (deh is 1-based)
     case 25: mi->bloodcolor = (int)value; return;
+    // mbf21
+    case 26:
+     // infightinggroup;
+     mi->infightinggroup = (int)(value);
+     if (mi->infightinggroup < 0) {
+	    I_Error("DeHackEd Error: Infighting groups must be non-negative.");
+     }
+     return;
+    case 27:
+  // projectilegroup;
+     mi->projectilegroup = (int)(value);
+     // need to increment by 1 to offset from default (0)
+     if (mi->projectilegroup >= 0)
+         mi->projectilegroup++;
+     return;
+    case 28:
+  // splashgroup;
+     mi->splashgroup = (int)(value);
+     if (mi->splashgroup < 0) {
+	    I_Error("DeHackEd Error: Splash groups must be non-negative.");
+     }
+     return;
+    case 29:
+  // mbf21flags; not handled here
+     return;
+    case 30:
+  // ripsound;
+     mi->ripsound = (int)(value);
+     return;
+    case 31:
+  // fastspeed;
+     mi->fastspeed = (int)(value);
+     return;
+    case 32:
+  // meleerange;
+     mi->meleerange = (int)(value);
+     return;
     default: return;
   }
 }
@@ -1987,7 +2200,33 @@ static void deh_procThing(DEHFILE *fpin, FILE* fpout, char *line)
       for (ix=0; ix<DEH_MOBJINFOMAX; ix++) {
         if (deh_strcasecmp(key,deh_mobjinfo[ix])) continue;
         
-        if (deh_strcasecmp(key,"Bits")) {
+        // jds - mbf21 bits handling
+        if (deh_strcasecmp(key,"MBF21 Bits") == 0) {
+            if (bGetData != 1) {
+                // mnemonics
+                value = 0;
+                for (;(strval = strtok(strval,deh_getBitsDelims())); strval = NULL) {
+                    size_t iy;
+                    for (iy=0; iy < DEH_MBF21_MOBJFLAGMAX; iy++) {
+                        if (deh_strcasecmp(strval,deh_mobjflags_mbf21[iy].name)) continue;
+                        if (fpout) {
+                            fprintf(fpout, 
+                                    "ORed value 0x%08lX%08lX %s\n",
+                                    (unsigned long)(deh_mobjflags_mbf21[iy].value>>32) & 0xffffffff, 
+                                    (unsigned long)deh_mobjflags_mbf21[iy].value & 0xffffffff, strval
+                                   );
+                        }
+                        value |= deh_mobjflags_mbf21[iy].value;
+                        break;
+                    }
+                    if (iy >= DEH_MBF21_MOBJFLAGMAX && fpout) {
+                        fprintf(fpout, "Could not find bit mnemonic %s\n", strval);
+                    }
+                }
+            }
+            mobjinfo[indexnum].mbf21flags = value;
+            if (fpout) fprintf(fpout,"MBF21 bits set -- %llx\n", mobjinfo[indexnum].mbf21flags);
+        } else if (deh_strcasecmp(key,"Bits")) {
           // standard value set
           
           // The old code here was the cause of a DEH-related bug in prboom.
@@ -2074,6 +2313,8 @@ static void deh_procFrame(DEHFILE *fpin, FILE* fpout, char *line)
   char inbuffer[DEH_BUFFERMAX];
   uint_64_t value;      // All deh values are ints or longs
   int indexnum;
+  int bGetData;
+  char* strval;
 
   strncpy(inbuffer,line,DEH_BUFFERMAX-1);
 
@@ -2084,59 +2325,133 @@ static void deh_procFrame(DEHFILE *fpin, FILE* fpout, char *line)
     if (fpout) fprintf(fpout,"Bad frame number %d of %d\n",indexnum, NUMSTATES);
 
   while (!dehfeof(fpin) && *inbuffer && (*inbuffer != ' '))
-    {
+  {
       if (!dehfgets(inbuffer, sizeof(inbuffer), fpin)) break;
       lfstrip(inbuffer);
       if (!*inbuffer) break;         // killough 11/98
-      if (!deh_GetData(inbuffer,key,&value,NULL,fpout)) // returns TRUE if ok
-        {
+      bGetData = deh_GetData(inbuffer,key,&value,&strval,fpout);
+      if (!bGetData) // returns TRUE if ok
+      {
           if (fpout) fprintf(fpout,"Bad data pair in '%s'\n",inbuffer);
           continue;
-        }
+      }
+
       if (!deh_strcasecmp(key,deh_state[0]))  // Sprite number
-        {
+      {
           if (fpout) fprintf(fpout," - sprite = %ld\n",(long)value);
           states[indexnum].sprite = (spritenum_t)value;
-        }
-      else
-        if (!deh_strcasecmp(key,deh_state[1]))  // Sprite subnumber
-          {
-            if (fpout) fprintf(fpout," - frame = %ld\n",(long)value);
-            states[indexnum].frame = (long)value; // long
-          }
-        else
-          if (!deh_strcasecmp(key,deh_state[2]))  // Duration
-            {
-              if (fpout) fprintf(fpout," - tics = %ld\n",(long)value);
-              states[indexnum].tics = (long)value; // long
-            }
-          else
-            if (!deh_strcasecmp(key,deh_state[3]))  // Next frame
-              {
-                if (fpout) fprintf(fpout," - nextstate = %ld\n",(long)value);
-                states[indexnum].nextstate = (statenum_t)value;
-              }
-            else
-              if (!deh_strcasecmp(key,deh_state[4]))  // Codep frame (not set in Frame deh block)
-                {
-                  if (fpout) fprintf(fpout," - codep, should not be set in Frame section!\n");
-                  /* nop */ ;
-                }
-              else
-                if (!deh_strcasecmp(key,deh_state[5]))  // Unknown 1
-                  {
-                    if (fpout) fprintf(fpout," - misc1 = %ld\n",(long)value);
-                    states[indexnum].misc1 = (long)value; // long
+      }
+      else if (!deh_strcasecmp(key,deh_state[1]))  // Sprite subnumber
+      {
+          if (fpout) fprintf(fpout," - frame = %ld\n",(long)value);
+          states[indexnum].frame = (long)value; // long
+      }
+      else if (!deh_strcasecmp(key,deh_state[2]))  // Duration
+      {
+          if (fpout) fprintf(fpout," - tics = %ld\n",(long)value);
+          states[indexnum].tics = (long)value; // long
+      }
+      else if (!deh_strcasecmp(key,deh_state[3]))  // Next frame
+      {
+          if (fpout) fprintf(fpout," - nextstate = %ld\n",(long)value);
+          states[indexnum].nextstate = (statenum_t)value;
+      }
+      else if (!deh_strcasecmp(key,deh_state[4]))  // Codep frame (not set in Frame deh block)
+      {
+          if (fpout) fprintf(fpout," - codep, should not be set in Frame section!\n");
+          /* nop */ ;
+      }
+      else if (!deh_strcasecmp(key,deh_state[5]))  // Unknown 1
+      {
+          if (fpout) fprintf(fpout," - misc1 = %ld\n",(long)value);
+          states[indexnum].misc1 = (long)value; // long
+      }
+      else if (!deh_strcasecmp(key,deh_state[6]))  // Unknown 2
+      {
+          if (fpout) fprintf(fpout," - misc2 = %ld\n",(long)value);
+          states[indexnum].misc2 = (long)value; // long
+      }
+      else if (!deh_strcasecmp(key,deh_state[7]))  // MBF21 bits
+      {
+          if (bGetData != 1) {
+              // mnemonics
+              value = 0;
+              // jds - only 1 bit field defined. will externalized if/when
+              // more get defined later.
+              for (;(strval = strtok(strval,deh_getBitsDelims())); strval = NULL) {
+                  if (deh_strcasecmp(strval,"SKILL5FAST")) continue;
+                  if (fpout) {
+                      fprintf(fpout, 
+                              "ORed value 0x%08lX %s\n",
+                              (unsigned long)STF_SKILL5FAST, strval
+                             );
                   }
-                else
-                  if (!deh_strcasecmp(key,deh_state[6]))  // Unknown 2
-                    {
-                      if (fpout) fprintf(fpout," - misc2 = %ld\n",(long)value);
-                      states[indexnum].misc2 = (long)value; // long
-                    }
-                  else
-                    if (fpout) fprintf(fpout,"Invalid frame string index for '%s'\n",key);
-    }
+                  value |= STF_SKILL5FAST;
+                  break;
+              }
+          }
+          if (fpout) fprintf(fpout," - MBF21 bits = %x\n",(unsigned int)value);
+          states[indexnum].mbf21stateflags = value;
+      }
+      // args
+      else if (!deh_strcasecmp(key,deh_state[8]))
+      {
+          int argnum = 0;
+          states[indexnum].stateargs[argnum] = (int_64_t)value;
+          states[indexnum].stateargsdefined[argnum] = TRUE;
+          if (fpout) fprintf(fpout," - Arg%d = %lx\n",argnum+1,(unsigned long int)value);
+      }
+      else if (!deh_strcasecmp(key,deh_state[9]))
+      {
+          int argnum = 1;
+          states[indexnum].stateargs[argnum] = (int_64_t)value;
+          states[indexnum].stateargsdefined[argnum] = TRUE;
+          if (fpout) fprintf(fpout," - Arg%d = %lx\n",argnum+1,(unsigned long int)value);
+      }
+      else if (!deh_strcasecmp(key,deh_state[10]))
+      {
+          int argnum = 2;
+          states[indexnum].stateargs[argnum] = (int_64_t)value;
+          states[indexnum].stateargsdefined[argnum] = TRUE;
+          if (fpout) fprintf(fpout," - Arg%d = %lx\n",argnum+1,(unsigned long int)value);
+      }
+      else if (!deh_strcasecmp(key,deh_state[11]))
+      {
+          int argnum = 3;
+          states[indexnum].stateargs[argnum] = (int_64_t)value;
+          states[indexnum].stateargsdefined[argnum] = TRUE;
+          if (fpout) fprintf(fpout," - Arg%d = %lx\n",argnum+1,(unsigned long int)value);
+      }
+      else if (!deh_strcasecmp(key,deh_state[12]))
+      {
+          int argnum = 4;
+          states[indexnum].stateargs[argnum] = (int_64_t)value;
+          states[indexnum].stateargsdefined[argnum] = TRUE;
+          if (fpout) fprintf(fpout," - Arg%d = %lx\n",argnum+1,(unsigned long int)value);
+      }
+      else if (!deh_strcasecmp(key,deh_state[13]))
+      {
+          int argnum = 5;
+          states[indexnum].stateargs[argnum] = (int_64_t)value;
+          states[indexnum].stateargsdefined[argnum] = TRUE;
+          if (fpout) fprintf(fpout," - Arg%d = %lx\n",argnum+1,(unsigned long int)value);
+      }
+      else if (!deh_strcasecmp(key,deh_state[14]))
+      {
+          int argnum = 6;
+          states[indexnum].stateargs[argnum] = (int_64_t)value;
+          states[indexnum].stateargsdefined[argnum] = TRUE;
+          if (fpout) fprintf(fpout," - Arg%d = %lx\n",argnum+1,(unsigned long int)value);
+      }
+      else if (!deh_strcasecmp(key,deh_state[15]))
+      {
+          int argnum = 7;
+          states[indexnum].stateargs[argnum] = (int_64_t)value;
+          states[indexnum].stateargsdefined[argnum] = TRUE;
+          if (fpout) fprintf(fpout," - Arg%d = %lx\n",argnum+1,(unsigned long int)value);
+      }
+      else if (fpout) fprintf(fpout,"Invalid frame string index for '%s'\n",key);
+  }
   return;
 }
 
@@ -2348,6 +2663,8 @@ static void deh_procWeapon(DEHFILE *fpin, FILE* fpout, char *line)
   char inbuffer[DEH_BUFFERMAX];
   uint_64_t value;      // All deh values are ints or longs
   int indexnum;
+  int bGetData;
+  char* strval = NULL;
 
   strncpy(inbuffer,line,DEH_BUFFERMAX-1);
 
@@ -2364,30 +2681,57 @@ static void deh_procWeapon(DEHFILE *fpin, FILE* fpout, char *line)
       if (!dehfgets(inbuffer, sizeof(inbuffer), fpin)) break;
       lfstrip(inbuffer);
       if (!*inbuffer) break;       // killough 11/98
-      if (!deh_GetData(inbuffer,key,&value,NULL,fpout)) // returns TRUE if ok
+      bGetData = deh_GetData(inbuffer,key,&value,&strval,fpout);
+      if (!bGetData) // returns TRUE if ok
         {
           if (fpout) fprintf(fpout,"Bad data pair in '%s'\n",inbuffer);
           continue;
         }
-      if (!deh_strcasecmp(key,deh_weapon[0]))  // Ammo type
-        weaponinfo[indexnum].ammo = (ammotype_t)value;
-      else
-        if (!deh_strcasecmp(key,deh_weapon[1]))  // Deselect frame
+      if (!deh_strcasecmp(key,deh_weapon[0])) {  // Ammo type
+          weaponinfo[indexnum].ammo = (ammotype_t)value;
+      } else if (!deh_strcasecmp(key,deh_weapon[1])) { // Deselect frame
           weaponinfo[indexnum].upstate = (int)value;
-        else
-          if (!deh_strcasecmp(key,deh_weapon[2]))  // Select frame
-            weaponinfo[indexnum].downstate = (int)value;
-          else
-            if (!deh_strcasecmp(key,deh_weapon[3]))  // Bobbing frame
-              weaponinfo[indexnum].readystate = (int)value;
-            else
-              if (!deh_strcasecmp(key,deh_weapon[4]))  // Shooting frame
-                weaponinfo[indexnum].atkstate = (int)value;
-              else
-                if (!deh_strcasecmp(key,deh_weapon[5]))  // Firing frame
-                  weaponinfo[indexnum].flashstate = (int)value;
-                else
-                  if (fpout) fprintf(fpout,"Invalid weapon string index for '%s'\n",key);
+      } else if (!deh_strcasecmp(key,deh_weapon[2])) { // Select frame
+          weaponinfo[indexnum].downstate = (int)value;
+      } else if (!deh_strcasecmp(key,deh_weapon[3])) { // Bobbing frame
+          weaponinfo[indexnum].readystate = (int)value;
+      } else if (!deh_strcasecmp(key,deh_weapon[4])) { // Shooting frame
+          weaponinfo[indexnum].atkstate = (int)value;
+      } else if (!deh_strcasecmp(key,deh_weapon[5])) { // Firing frame
+          weaponinfo[indexnum].flashstate = (int)value;
+      } else if (!deh_strcasecmp(key,deh_weapon[6])) { // MBF21 Weapon Bits
+            if (bGetData != 1) {
+                // mnemonics
+                value = 0;
+                for (;(strval = strtok(strval,deh_getBitsDelims())); strval = NULL) {
+                    size_t iy;
+                    for (iy=0; iy < DEH_MBF21_WEAPONFLAGMAX; iy++) {
+                        if (deh_strcasecmp(strval,deh_weaponflags_mbf21[iy].name)) continue;
+                        if (fpout) {
+                            fprintf(fpout, 
+                                    "ORed value 0x%08lX %s\n",
+                                    (unsigned long)deh_weaponflags_mbf21[iy].value, strval
+                                   );
+                        }
+                        value |= deh_weaponflags_mbf21[iy].value;
+                        break;
+                    }
+                    if (iy >= DEH_MBF21_WEAPONFLAGMAX && fpout) {
+                        fprintf(fpout, "Could not find bit mnemonic %s\n", strval);
+                    }
+                }
+            }
+            weaponinfo[indexnum].mbf21weaponflags = (int)value;
+            if (fpout) fprintf(fpout,"MBF21 weapon bits set -- %x\n", weaponinfo[indexnum].mbf21weaponflags);
+      } else if (!deh_strcasecmp(key,deh_weapon[7])) { // Ammo per shot
+          if ((int)value < 0) {
+              if (fpout) fprintf(fpout,"Invalid ammo per shot (must be non-negative) for '%s'\n",key);
+          } else {
+              weaponinfo[indexnum].ammopershot = (int)value;
+          }
+      } else if (fpout) {
+          fprintf(fpout,"Invalid weapon string index for '%s'\n",key);
+      }
     }
   return;
 }
@@ -2622,62 +2966,47 @@ static void deh_procMisc(DEHFILE *fpin, FILE* fpout, char *line) // done
       // Otherwise it's ok
       if (fpout) fprintf(fpout,"Processing Misc item '%s'\n", key);
 
-      if (!deh_strcasecmp(key,deh_misc[0]))  // Initial Health
-        initial_health = (int)value;
-      else
-        if (!deh_strcasecmp(key,deh_misc[1]))  // Initial Bullets
+      if (!deh_strcasecmp(key,deh_misc[0])) { // Initial Health
+          initial_health = (int)value;
+      } else if (!deh_strcasecmp(key,deh_misc[1])) { // Initial Bullets
           initial_bullets = (int)value;
-        else
-          if (!deh_strcasecmp(key,deh_misc[2]))  // Max Health
-            IsDehMaxHealth = true, deh_maxhealth = (int)value; //e6y
-          else
-            if (!deh_strcasecmp(key,deh_misc[3]))  // Max Armor
-              max_armor = (int)value;
-            else
-              if (!deh_strcasecmp(key,deh_misc[4]))  // Green Armor Class
-                green_armor_class = (int)value;
-              else
-                if (!deh_strcasecmp(key,deh_misc[5]))  // Blue Armor Class
-                  blue_armor_class = (int)value;
-                else
-                  if (!deh_strcasecmp(key,deh_misc[6]))  // Max Soulsphere
-                    IsDehMaxSoul = true, deh_max_soul = (int)value; //e6y
-                  else
-                    if (!deh_strcasecmp(key,deh_misc[7]))  // Soulsphere Health
-                      soul_health = (int)value;
-                    else
-                      if (!deh_strcasecmp(key,deh_misc[8]))  // Megasphere Health
-                        IsDehMegaHealth = true, deh_mega_health = (int)value; //e6y
-                      else
-                        if (!deh_strcasecmp(key,deh_misc[9]))  // God Mode Health
-                          god_health = (int)value;
-                        else
-                          if (!deh_strcasecmp(key,deh_misc[10]))  // IDFA Armor
-                            idfa_armor = (int)value;
-                          else
-                            if (!deh_strcasecmp(key,deh_misc[11]))  // IDFA Armor Class
-                              idfa_armor_class = (int)value;
-                            else
-                              if (!deh_strcasecmp(key,deh_misc[12]))  // IDKFA Armor
-                                idkfa_armor = (int)value;
-                              else
-                                if (!deh_strcasecmp(key,deh_misc[13]))  // IDKFA Armor Class
-                                  idkfa_armor_class = (int)value;
-                                else
-                                  if (!deh_strcasecmp(key,deh_misc[14]))  // BFG Cells/Shot
-                                    bfgcells = (int)value;
-                                  else
-                                    if (!deh_strcasecmp(key,deh_misc[15])) { // Monsters Infight
-                                      // e6y: Dehacked support - monsters infight
-                                      if (value == 202) monsters_infight = 0;
-                                      else if (value == 221) monsters_infight = 1;
-                                      else if (fpout) fprintf(fpout,
-                                        "Invalid value for 'Monsters Infight': %i", (int)value);
-
-                                      /* No such switch in DOOM - nop */ //e6y ;
-                                    } else
-                                      if (fpout) fprintf(fpout,
-                                                         "Invalid misc item string index for '%s'\n",key);
+      } else if (!deh_strcasecmp(key,deh_misc[2])) { // Max Health
+          IsDehMaxHealth = true, deh_maxhealth = (int)value; //e6y
+      } else if (!deh_strcasecmp(key,deh_misc[3])) { // Max Armor
+          max_armor = (int)value;
+      } else if (!deh_strcasecmp(key,deh_misc[4])) { // Green Armor Class
+          green_armor_class = (int)value;
+      } else if (!deh_strcasecmp(key,deh_misc[5])) { // Blue Armor Class
+          blue_armor_class = (int)value;
+      } else if (!deh_strcasecmp(key,deh_misc[6])) { // Max Soulsphere
+          IsDehMaxSoul = true, deh_max_soul = (int)value; //e6y
+      } else if (!deh_strcasecmp(key,deh_misc[7])) { // Soulsphere Health
+          soul_health = (int)value;
+      } else if (!deh_strcasecmp(key,deh_misc[8])) { // Megasphere Health
+          IsDehMegaHealth = true, deh_mega_health = (int)value; //e6y
+      } else if (!deh_strcasecmp(key,deh_misc[9])) { // God Mode Health
+          god_health = (int)value;
+      } else if (!deh_strcasecmp(key,deh_misc[10])) { // IDFA Armor
+          idfa_armor = (int)value;
+      } else if (!deh_strcasecmp(key,deh_misc[11])) { // IDFA Armor Class
+          idfa_armor_class = (int)value;
+      } else if (!deh_strcasecmp(key,deh_misc[12])) { // IDKFA Armor
+          idkfa_armor = (int)value;
+      } else if (!deh_strcasecmp(key,deh_misc[13])) { // IDKFA Armor Class
+          idkfa_armor_class = (int)value;
+      } else if (!deh_strcasecmp(key,deh_misc[14])) { // BFG Cells/Shot
+          bfgcells = (int)value;
+          weaponinfo[wp_bfg].ammopershot = bfgcells; // jds - also set BFG Ammo Per Shot per spec
+      } else if (!deh_strcasecmp(key,deh_misc[15])) { // Monsters Infight
+                                                      // e6y: Dehacked support - monsters infight
+          if (value == 202) monsters_infight = 0;
+          else if (value == 221) monsters_infight = 1;
+          else if (fpout) fprintf(fpout,
+                  "Invalid value for 'Monsters Infight': %i", (int)value);
+          /* No such switch in DOOM - nop */ //e6y ;
+      } else {
+          if (fpout) fprintf(fpout, "Invalid misc item string index for '%s'\n",key);
+      }
     }
   return;
 }

@@ -52,6 +52,7 @@
 #include "g_overflow.h"
 #include "e6y.h"//e6y
 #include "c_cvar.h"
+#include "p_spec.h"
 
 // [FG] colored blood and gibs
 dboolean colored_blood;
@@ -329,7 +330,10 @@ static void P_XYMovement (mobj_t* mo)
   if (mo->momx > -STOPSPEED && mo->momx < STOPSPEED &&
       mo->momy > -STOPSPEED && mo->momy < STOPSPEED &&
       (!player || !(player->cmd.forwardmove | player->cmd.sidemove) ||
-       (player->mo != mo && compatibility_level >= lxdoom_1_compatibility)))
+       (player->mo != mo && compatibility_level >= lxdoom_1_compatibility
+        &&
+        (mbf21_features && (comp[comp_voodooscroller] || !(mo->intflags & MIF_SCROLLING)))
+        )))
     {
       // if in a walking frame, stop moving
 
@@ -489,7 +493,7 @@ static void P_ZMovement (mobj_t* mo)
       }
     } else {
       if (!(mo->flags & MF_NOGRAVITY))      /* free-fall under gravity */
-        mo->momz -= mo->info->mass*(GRAVITY/256);
+        mo->momz -= (mbf21_features && (mobjinfo[mo->type].mbf21flags & MF2_LOGRAV)) ? mo->info->mass*((GRAVITY >> 3)/256): mo->info->mass*(GRAVITY/256);
 
       if (mo->flags & MF_FLOAT && sentient(mo)) goto floater;
       return;
@@ -634,7 +638,9 @@ floater:
       }
     }
   else // still above the floor                                     // phares
-    if (mo->type == MT_GIBDTH && !demorecording && !demoplayback)
+    if ((mo->type == MT_GIBDTH && !demorecording && !demoplayback) ||
+        (mbf21_features && (mobjinfo[mo->type].mbf21flags & MF2_LOGRAV))
+       )
     { // if (mo->flags & MF_LOGRAV)
       // alternate gravity (MF2_LOGRAV from Heretic)
       if (mo->momz == 0)
@@ -811,6 +817,7 @@ void P_MobjThinker (mobj_t* mobj)
   if (mobj->momx | mobj->momy || mobj->flags & MF_SKULLFLY)
     {
       P_XYMovement(mobj);
+      mobj->intflags &= ~MIF_SCROLLING;
       if (mobj->thinker.function != P_MobjThinker) // cph - Must've been removed
   return;       // killough - mobj was removed
     }
@@ -836,6 +843,20 @@ void P_MobjThinker (mobj_t* mobj)
   else
     mobj->intflags &= ~MIF_FALLING, mobj->gear = 0;  // Reset torque
       }
+
+  // mbf21 kill monsters in special sector
+  if (mbf21_features && mobj->subsector &&
+          mobj->subsector->sector &&
+          (mobj->subsector->sector->special & KILL_GROUNDED_MONSTERS_MASK) &&
+          mobj->type != MT_PLAYER &&
+          mobj->z == mobj->floorz &&  // monster is on the ground
+          mobj->flags & MF_SHOOTABLE && // can be hurt/killed
+          mobj->health > 0 && // not already dead
+          !(mobj->flags & MF_FLOAT) // not floating enemy type
+     ) {
+      P_DamageMobj(mobj, NULL, NULL, mobj->health);
+      return;
+  }
 
   // cycle through states,
   // calling action functions at transitions
@@ -919,6 +940,7 @@ mobj_t* P_SpawnMobj(fixed_t x,fixed_t y,fixed_t z,mobjtype_t type)
   mobj->radius = info->radius;
   mobj->height = info->height;                                      // phares
   mobj->flags  = info->flags;
+  mobj->mbf21flags  = info->mbf21flags;
 
   /* killough 8/23/98: no friends, bouncers, or touchy things in old demos */
   if (!mbf_features)
@@ -1516,7 +1538,7 @@ void P_SpawnPuff(fixed_t x,fixed_t y,fixed_t z)
 
   // don't make punches spark on the wall
 
-  if (attackrange == MELEERANGE)
+  if (attackrange == mobjinfo[MT_PLAYER].meleerange)
     P_SetMobjState (th, S_PUFF3);
 }
 
@@ -1556,7 +1578,7 @@ void P_SpawnBlood(fixed_t x,fixed_t y,fixed_t z,int damage, mobj_t* bleeder)
 //  and possibly explodes it right there.
 //
 
-void P_CheckMissileSpawn (mobj_t* th)
+dboolean P_CheckMissileSpawn (mobj_t* th)
 {
   th->tics -= P_Random(pr_missile)&3;
   if (th->tics < 1)
@@ -1571,12 +1593,16 @@ void P_CheckMissileSpawn (mobj_t* th)
 
   // killough 8/12/98: for non-missile objects (e.g. grenades)
   if (!(th->flags & MF_MISSILE) && mbf_features)
-    return;
+    return true;
 
   // killough 3/15/98: no dropoff (really = don't care for missiles)
 
-  if (!P_TryMove (th, th->x, th->y, false))
+  if (!P_TryMove (th, th->x, th->y, false)) {
     P_ExplodeMissile (th);
+    return false;
+  }
+
+  return true;
 }
 
 
@@ -1618,7 +1644,9 @@ mobj_t* P_SpawnMissile(mobj_t* source,mobj_t* dest,mobjtype_t type)
     dist = 1;
 
   th->momz = (dest->z - source->z) / dist;
-  P_CheckMissileSpawn (th);
+  
+  if (!P_CheckMissileSpawn (th))
+      return NULL;
 
   return th;
 }
@@ -1629,7 +1657,7 @@ mobj_t* P_SpawnMissile(mobj_t* source,mobj_t* dest,mobjtype_t type)
 // Tries to aim at a nearby monster
 //
 
-void P_SpawnPlayerMissile(mobj_t* source,mobjtype_t type)
+mobj_t* P_SpawnPlayerMissile(mobj_t* source,mobjtype_t type)
 {
   mobj_t *th;
   fixed_t x, y, z, slope = 0;
@@ -1675,4 +1703,5 @@ void P_SpawnPlayerMissile(mobj_t* source,mobjtype_t type)
   th->momz = FixedMul(th->info->speed,slope);
 
   P_CheckMissileSpawn(th);
-  }
+  return th;
+}
