@@ -6,7 +6,7 @@ This is my own personal fork of PrBoom-Plus. It contains quality-of-play upgrade
 
 # Installation
 
-* [Latest release](https://github.com/JadingTsunami/prboomX/releases/tag/prboomX-2.7.0)
+* [Latest release](https://github.com/JadingTsunami/prboomX/releases/tag/prboomX-2.8.1)
 * [Development builds](https://github.com/JadingTsunami/prboomX/actions)
 
 Install [PrBoom-Plus](https://github.com/coelckers/prboom-plus) and place the binaries for prboomX alongside your `prboom-plus` executable. Run the `prboomX` executable to launch prboomX instead. Your PrBoom-Plus configuration and save data will not be affected; you can run both in parallel.
@@ -512,3 +512,9 @@ Sub-bullets list accepted alternate names for weapons.
     * [The Ritual](https://opengameart.org/content/the-ritual) by [northivanastan](https://opengameart.org/users/northivanastan), CC0
 * Max 100% Announcement (`DSMAXALL`)
     * [Cure7](https://opengameart.org/content/cure-magic) by [Someoneman](https://opengameart.org/users/someoneman), CC0
+
+# Revision History
+
+* 2.8.1 - Hotfix for menu crash bug (thanks to Doomworld user [RicemanRHys](https://www.doomworld.com/profile/64480-ricemanrhys/) for the report).
+* 2.8.0 - Added MBF21 support.
+* 2.7.0 - Initial release.

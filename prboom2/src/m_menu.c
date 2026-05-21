@@ -140,6 +140,13 @@ static void M_DrawBackground(const char *flat, int scrn)
     V_DrawBackground(flat, scrn);
 }
 
+static void M_ChangeDefaultComplevel()
+{
+    if (default_compatibility_level > prboom_6_compatibility &&
+            default_compatibility_level < mbf21_compatibility)
+        default_compatibility_level = mbf21_compatibility;
+}
+
 // we are going to be entering a savegame string
 
 int saveStringEnter;
@@ -3379,6 +3386,10 @@ static const char *gen_compstrings[] =
   "15/PrB 2.3.x",
   "16/PrB 2.4.0",
   "17/PrB+ Latest",
+  "18/invalid",
+  "19/invalid",
+  "20/invalid",
+  "21/MBF21",
   NULL
 };
 
@@ -3398,7 +3409,7 @@ setup_menu_t gen_settings2[] = { // General Settings screen2
   {"Maximum number of player corpses", S_NUM|S_PRGWARN, m_null, G_X, G_Y+12*8, {"max_player_corpse"}},
   {"Game speed, percentage of normal", S_NUM|S_PRGWARN, m_null, G_X, G_Y+13*8, {"realtic_clock_rate"}},
   {"Default skill level",              S_CHOICE,        m_null, G_X, G_Y+14*8, {"default_skill"}, 0, 0, NULL, gen_skillstrings},
-  {"Default compatibility level",      S_CHOICE,        m_null, G_X, G_Y+15*8, {"default_compatibility_level"}, 0, 0, NULL, &gen_compstrings[1]},
+  {"Default compatibility level",      S_CHOICE,        m_null, G_X, G_Y+15*8, {"default_compatibility_level"}, 0, 0, M_ChangeDefaultComplevel, &gen_compstrings[1]},
   {"Show ENDOOM screen",               S_YESNO,         m_null, G_X, G_Y+16*8, {"showendoom"}},
   {"Fullscreen menu background",       S_YESNO, m_null, G_X, G_Y + 17*8, {"menu_background"}},
   {"Organize Save files by loaded WAD",S_YESNO       ,m_null, G_X, G_Y+18*8  , {"organize_saves"}, 0, 0, D_AdjustSaveLocation},
