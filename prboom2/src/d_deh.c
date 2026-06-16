@@ -2720,6 +2720,8 @@ static void deh_procSounds(DEHFILE *fpin, FILE* fpout, char *line)
     if (fpout) fprintf(fpout,"Bad sound number %d of %d\n",
                        indexnum, num_sfx);
 
+  indexnum = dsdhacked_remap(indexnum, DSDHACKED_SFX);
+
   while (!dehfeof(fpin) && *inbuffer && (*inbuffer != ' '))
     {
       if (!dehfgets(inbuffer, sizeof(inbuffer), fpin)) break;
@@ -3602,6 +3604,7 @@ static void deh_procBexSounds(DEHFILE *fpin, FILE *fpout, char *line)
    char candidate[7];
    int  rover;
    size_t len;
+   dboolean found = FALSE;
    
    if(fpout)
       fprintf(fpout,"Processing sound name substitution\n");
@@ -3645,9 +3648,17 @@ static void deh_procBexSounds(DEHFILE *fpin, FILE *fpout, char *line)
 	               candidate, deh_soundnames[rover]);
 
 	    S_sfx[rover].name = strdup(candidate);
+        found = TRUE;
 	    break;
 	 }
 	 rover++;
+      }
+
+      if (!found) {
+          int sindex = atoi(key);
+          if (sindex > 0) {
+              S_sfx[sindex].name = strdup(candidate);
+          }
       }
    }
 }
