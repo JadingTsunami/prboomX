@@ -60,6 +60,19 @@
 #define TRUE 1
 #define FALSE 0
 
+// haleyjd: support for BEX SPRITES, SOUNDS, and MUSIC
+char *deh_spritenames[NUMSPRITES + 1];
+char *deh_musicnames[NUMMUSIC + 1];
+dboolean sprnames_state[NUMSPRITES+1];
+dboolean S_music_state[NUMMUSIC];
+
+dboolean* S_sfx_state;
+char **deh_soundnames;
+
+sfxinfo_t* S_sfx;
+int num_sfx;
+int sfx_array_capacity;
+
 // e6y: for compatibility with BOOM deh parser
 int deh_strcasecmp(const char *str1, const char *str2)
 {
@@ -103,6 +116,152 @@ typedef struct {
   /* else, !lump, and f is the file being read */
   FILE* f;
 } DEHFILE;
+
+typedef enum {
+    DSDHACKED_NONE = -1,
+    DSDHACKED_SFX,
+    DSDHACKED_STATE,
+    DSDHACKED_THING,
+    DSDHACKED_SPRITE,
+    DSDHACKED_LAST
+} dsdhacked_type_e;
+
+typedef struct {
+    int remap_from;
+    int remap_to;
+} dsdhacked_remap_t;
+
+typedef struct {
+    int remap_list_size;
+    int remap_list_capacity;
+    dsdhacked_remap_t* remap_list;
+} dsdhacked_array_t;
+
+dsdhacked_array_t dsdhacked_arrays[] = {
+    {0, 0, NULL}, // SFX
+    {0, 0, NULL}, // STATE
+    {0, 0, NULL}, // THING
+    {0, 0, NULL}  // SPRITE
+};
+
+#define DSDHACKED_SIZE_INCREMENT (128)
+
+static void dsdhacked_install_default_entry(int index, dsdhacked_type_e dsdhacked_type)
+{
+    switch (dsdhacked_type) {
+        case DSDHACKED_SFX:
+            S_sfx[index].priority = 127;
+            S_sfx[index].pitch = -1;
+            S_sfx[index].volume = - 1;
+            break;
+        case DSDHACKED_STATE:
+            break;
+        case DSDHACKED_THING:
+            break;
+        case DSDHACKED_SPRITE:
+            break;
+        default:
+            I_Error("Bad DSDHACKED Type (%d) in dsdhacked_install_default_entry; internal error.", dsdhacked_type);
+            break;
+    }
+}
+
+static int dsdhacked_alloc_entry(dsdhacked_type_e dsdhacked_type)
+{
+    int entry_index = -1;
+    switch (dsdhacked_type) {
+        case DSDHACKED_SFX:
+            if (num_sfx + 1 > sfx_array_capacity) {
+                S_sfx = realloc(S_sfx, (num_sfx + DSDHACKED_SIZE_INCREMENT)*(sizeof(sfxinfo_t)));
+                S_sfx_state = realloc(S_sfx_state, (num_sfx + DSDHACKED_SIZE_INCREMENT)*sizeof(dboolean));
+                if (!S_sfx || S_sfx_state)
+                    I_Error("Out of memory in dsdhacked_alloc_entry");
+            }
+            entry_index = num_sfx;
+            num_sfx += 1;
+            break;
+        case DSDHACKED_STATE:
+            break;
+        case DSDHACKED_THING:
+            break;
+        case DSDHACKED_SPRITE:
+            break;
+        default:
+            I_Error("Bad DSDHACKED Type (%d) in dsdhacked_alloc_entry; internal error.", dsdhacked_type);
+            break;
+    }
+    return entry_index;
+}
+
+static int dsdhacked_remap(int index, dsdhacked_type_e dsdhacked_type)
+{
+    // get last original doom index for type
+    int type_last = -1;
+
+    switch (dsdhacked_type) {
+        case DSDHACKED_SFX:
+            type_last = ORIG_NUMSFX;
+            break;
+        case DSDHACKED_STATE:
+            break;
+        case DSDHACKED_THING:
+            break;
+        case DSDHACKED_SPRITE:
+            break;
+        default:
+            I_Error("Bad DSDHACKED Type (%d) in dsdhacked_remap; internal error.", dsdhacked_type);
+            break;
+    }
+
+    // if it's in the original array, return it as it is
+    if (index < type_last) {
+        return index;
+    } else {
+        // else it's a dsdhacked index, so either allocate
+        // or find the existing remap
+        int i;
+        dsdhacked_remap_t new_remap;
+        dsdhacked_array_t array = dsdhacked_arrays[dsdhacked_type];
+        for (i = 0; i < array.remap_list_size; i++) {
+            if (array.remap_list[i].remap_from == index) {
+                // we found it, return
+                return array.remap_list[i].remap_to;
+            }
+        }
+
+        // if we got here, we didn't find it, we need to allocate space
+        // and register the new remap
+        if (array.remap_list_capacity == 0) {
+            array.remap_list = calloc(DSDHACKED_SIZE_INCREMENT, sizeof(dsdhacked_remap_t));
+            array.remap_list_capacity = DSDHACKED_SIZE_INCREMENT;
+        } else if (array.remap_list_capacity == array.remap_list_size) {
+            dsdhacked_remap_t* new_remap_list;
+            int new_capacity = (array.remap_list_capacity + DSDHACKED_SIZE_INCREMENT);
+            new_remap_list = realloc(array.remap_list, new_capacity * sizeof(dsdhacked_remap_t));
+            if (!new_remap_list)
+                I_Error("Error: out of memory reallocating remap list for DSDHacked entry.");
+            array.remap_list = new_remap_list;
+            array.remap_list_capacity = new_capacity;
+        }
+
+        // reaching here, we have enough space in the remap array
+        // we need to:
+        // - find or create space for a new entry in the original array
+        // - register a new remap
+        // - fill defaults into the newly-allocated entry
+        // - update the size to include the entry
+        // - return the index we registered
+        new_remap.remap_to = dsdhacked_alloc_entry(dsdhacked_type);
+        new_remap.remap_from = index;
+        array.remap_list[array.remap_list_size++] = new_remap;
+
+        dsdhacked_install_default_entry(new_remap.remap_to, dsdhacked_type);
+        return new_remap.remap_to;
+    }
+//state_t states[NUMSTATES]
+//mobjinfo_t mobjinfo[NUMMOBJTYPES]
+//const char *sprnames[NUMSPRITES+1]
+}
 
 // killough 10/98: emulate IO whether input really comes from a file or not
 
@@ -1503,14 +1662,16 @@ static const deh_bexptr deh_bexptrs[] = // CPhipps - static const
 // CPhipps - static
 static actionf_t deh_codeptr[NUMSTATES];
 
-// haleyjd: support for BEX SPRITES, SOUNDS, and MUSIC
-char *deh_spritenames[NUMSPRITES + 1];
-char *deh_musicnames[NUMMUSIC + 1];
-char *deh_soundnames[NUMSFX + 1];
-
 void D_BuildBEXTables(void)
 {
    int i, j;
+
+   S_sfx = calloc(num_sfx, sizeof(sfxinfo_t));
+   memcpy(S_sfx, orig_S_sfx, sizeof(sfxinfo_t)*num_sfx);
+   num_sfx = ORIG_NUMSFX;
+   sfx_array_capacity = num_sfx;
+   S_sfx_state = calloc(num_sfx, sizeof(dboolean));
+   deh_soundnames = calloc(num_sfx + 1, sizeof(char*));
 
    // moved from ProcessDehFile, then we don't need the static int i
    for (i = 0; i < EXTRASTATES; i++)  // remember what they start as for deh xref
@@ -1544,14 +1705,14 @@ void D_BuildBEXTables(void)
       deh_musicnames[i] = strdup(S_music[i].name);
    deh_musicnames[0] = deh_musicnames[NUMMUSIC] = NULL;
 
-   for(i = 1; i < NUMSFX; i++) {
+   for(i = 1; i < num_sfx; i++) {
       if (S_sfx[i].name != NULL) {
          deh_soundnames[i] = strdup(S_sfx[i].name);
       } else { // This is possible due to how DEHEXTRA has turned S_sfx into a sparse array
          deh_soundnames[i] = NULL;
       }
    }
-   deh_soundnames[0] = deh_soundnames[NUMSFX] = NULL;
+   deh_soundnames[0] = deh_soundnames[num_sfx] = NULL;
 
   // ferk: initialize Thing extra properties (keeping vanilla props in info.c)
   for (i = 0; i < NUMMOBJTYPES; i++)
@@ -2246,7 +2407,8 @@ static void deh_procThing(DEHFILE *fpin, FILE* fpout, char *line)
           if (bGetData==1) { // proff
             value = getConvertedDEHBits(value);
             mobjinfo[indexnum].flags = value;
-            DEH_mobjinfo_bits[indexnum] = true; //e6y: changed by DEH
+            if (indexnum < NUMMOBJTYPES)
+                DEH_mobjinfo_bits[indexnum] = true; //e6y: changed by DEH
           }
           else {
             // figure out what the bits are
@@ -2554,9 +2716,9 @@ static void deh_procSounds(DEHFILE *fpin, FILE* fpout, char *line)
   sscanf(inbuffer,"%s %i",key, &indexnum);
   if (fpout) fprintf(fpout,"Processing Sounds at index %d: %s\n",
                      indexnum, key);
-  if (indexnum < 0 || indexnum >= NUMSFX)
+  if (indexnum < 0)
     if (fpout) fprintf(fpout,"Bad sound number %d of %d\n",
-                       indexnum, NUMSFX);
+                       indexnum, num_sfx);
 
   while (!dehfeof(fpin) && *inbuffer && (*inbuffer != ' '))
     {
@@ -3038,9 +3200,6 @@ static void deh_procText(DEHFILE *fpin, FILE* fpout, char *line)
   // BOSSBOS2  BOS2BOSS;   RUNNINSTALKS  STALKSRUNNIN
   // It corrects buggy behaviour on "All Hell is Breaking Loose" TC
   // http://www.doomworld.com/idgames/index.php?id=6480 
-  static dboolean sprnames_state[NUMSPRITES+1];
-  static dboolean S_sfx_state[NUMSFX];
-  static dboolean S_music_state[NUMMUSIC];
 
   // Ty 04/11/98 - Included file may have NOTEXT skip flag set
   if (includenotext) // flag to skip included deh-style text
@@ -3112,7 +3271,7 @@ static void deh_procText(DEHFILE *fpin, FILE* fpout, char *line)
                              "Warning: Mismatched lengths from=%d, to=%d, used %d\n",
                              fromlen, tolen, usedlen);
         // Try sound effects entries - see sounds.c
-        for (i=1; i<NUMSFX; i++)
+        for (i=1; i<num_sfx; i++)
           {
             // skip empty dummy entries in S_sfx[]
             if (!S_sfx[i].name) continue;

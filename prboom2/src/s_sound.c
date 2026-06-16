@@ -150,7 +150,7 @@ void S_Init(int sfxVolume, int musicVolume)
     memset(sobjs, 0, sizeof(sobjs));
 
     // Note that sounds have not been cached (yet).
-    for (i=1 ; i<NUMSFX ; i++)
+    for (i=1 ; i<num_sfx ; i++)
     {
       sfxinfo_t *sfx = &S_sfx[i];
       sfx->lumpnum = I_GetSfxLumpNum(sfx);
@@ -266,7 +266,7 @@ static void S_StartSoundAtVolume(degenmobj_t *origin, int sfx_id, int volume)
     return;
 
   // check for bogus sound #
-  if (sfx_id < 1 || sfx_id > NUMSFX)
+  if (sfx_id < 1 || sfx_id > num_sfx)
     I_Error("S_StartSoundAtVolume: Bad sfx #: %d", sfx_id);
 
   sfx = &S_sfx[sfx_id];
