@@ -117,15 +117,6 @@ typedef struct {
   FILE* f;
 } DEHFILE;
 
-typedef enum {
-    DSDHACKED_NONE = -1,
-    DSDHACKED_SFX,
-    DSDHACKED_STATE,
-    DSDHACKED_THING,
-    DSDHACKED_SPRITE,
-    DSDHACKED_LAST
-} dsdhacked_type_e;
-
 typedef struct {
     int remap_from;
     int remap_to;
@@ -174,7 +165,7 @@ static int dsdhacked_alloc_entry(dsdhacked_type_e dsdhacked_type)
             if (num_sfx + 1 > sfx_array_capacity) {
                 S_sfx = realloc(S_sfx, (num_sfx + DSDHACKED_SIZE_INCREMENT)*(sizeof(sfxinfo_t)));
                 S_sfx_state = realloc(S_sfx_state, (num_sfx + DSDHACKED_SIZE_INCREMENT)*sizeof(dboolean));
-                if (!S_sfx || S_sfx_state)
+                if (!S_sfx || !S_sfx_state)
                     I_Error("Out of memory in dsdhacked_alloc_entry");
             }
             entry_index = num_sfx;
@@ -221,27 +212,29 @@ static int dsdhacked_remap(int index, dsdhacked_type_e dsdhacked_type)
         // or find the existing remap
         int i;
         dsdhacked_remap_t new_remap;
-        dsdhacked_array_t array = dsdhacked_arrays[dsdhacked_type];
-        for (i = 0; i < array.remap_list_size; i++) {
-            if (array.remap_list[i].remap_from == index) {
+        dsdhacked_array_t* array = &dsdhacked_arrays[dsdhacked_type];
+        for (i = 0; i < array->remap_list_size; i++) {
+            if (array->remap_list[i].remap_from == index) {
                 // we found it, return
-                return array.remap_list[i].remap_to;
+                return array->remap_list[i].remap_to;
             }
         }
 
         // if we got here, we didn't find it, we need to allocate space
         // and register the new remap
-        if (array.remap_list_capacity == 0) {
-            array.remap_list = calloc(DSDHACKED_SIZE_INCREMENT, sizeof(dsdhacked_remap_t));
-            array.remap_list_capacity = DSDHACKED_SIZE_INCREMENT;
-        } else if (array.remap_list_capacity == array.remap_list_size) {
+        if (array->remap_list_capacity == 0) {
+            array->remap_list = calloc(DSDHACKED_SIZE_INCREMENT, sizeof(dsdhacked_remap_t));
+            array->remap_list_capacity = DSDHACKED_SIZE_INCREMENT;
+            if (!array->remap_list)
+                I_Error("Out of memory allocating remap list.");
+        } else if (array->remap_list_capacity == array->remap_list_size) {
             dsdhacked_remap_t* new_remap_list;
-            int new_capacity = (array.remap_list_capacity + DSDHACKED_SIZE_INCREMENT);
-            new_remap_list = realloc(array.remap_list, new_capacity * sizeof(dsdhacked_remap_t));
+            int new_capacity = (array->remap_list_capacity + DSDHACKED_SIZE_INCREMENT);
+            new_remap_list = realloc(array->remap_list, new_capacity * sizeof(dsdhacked_remap_t));
             if (!new_remap_list)
                 I_Error("Error: out of memory reallocating remap list for DSDHacked entry.");
-            array.remap_list = new_remap_list;
-            array.remap_list_capacity = new_capacity;
+            array->remap_list = new_remap_list;
+            array->remap_list_capacity = new_capacity;
         }
 
         // reaching here, we have enough space in the remap array
@@ -253,7 +246,7 @@ static int dsdhacked_remap(int index, dsdhacked_type_e dsdhacked_type)
         // - return the index we registered
         new_remap.remap_to = dsdhacked_alloc_entry(dsdhacked_type);
         new_remap.remap_from = index;
-        array.remap_list[array.remap_list_size++] = new_remap;
+        array->remap_list[array->remap_list_size++] = new_remap;
 
         dsdhacked_install_default_entry(new_remap.remap_to, dsdhacked_type);
         return new_remap.remap_to;
@@ -261,6 +254,25 @@ static int dsdhacked_remap(int index, dsdhacked_type_e dsdhacked_type)
 //state_t states[NUMSTATES]
 //mobjinfo_t mobjinfo[NUMMOBJTYPES]
 //const char *sprnames[NUMSPRITES+1]
+}
+
+int dsdhacked_sound_index(int index)
+{
+    // if it's in the original array, return it as it is
+    if (index < ORIG_NUMSFX) {
+        return index;
+    } else {
+        int i;
+        dsdhacked_array_t* array = &dsdhacked_arrays[DSDHACKED_SFX];
+        for (i = 0; i < array->remap_list_size; i++) {
+            if (array->remap_list[i].remap_from == index) {
+                // we found it, return
+                return array->remap_list[i].remap_to;
+            }
+        }
+    }
+
+    return sfx_None;
 }
 
 // killough 10/98: emulate IO whether input really comes from a file or not
@@ -1666,12 +1678,19 @@ void D_BuildBEXTables(void)
 {
    int i, j;
 
-   S_sfx = calloc(num_sfx, sizeof(sfxinfo_t));
-   memcpy(S_sfx, orig_S_sfx, sizeof(sfxinfo_t)*num_sfx);
+   // dsdhacked initializations
    num_sfx = ORIG_NUMSFX;
+   S_sfx = calloc(num_sfx, sizeof(sfxinfo_t));
+   if (!S_sfx)
+       I_Error("Out of memory allocating S_sfx");
+   memcpy(S_sfx, orig_S_sfx, sizeof(sfxinfo_t)*num_sfx);
    sfx_array_capacity = num_sfx;
    S_sfx_state = calloc(num_sfx, sizeof(dboolean));
    deh_soundnames = calloc(num_sfx + 1, sizeof(char*));
+   if (!S_sfx_state || !deh_soundnames)
+       I_Error("Out of memory allocating sfx tables");
+
+
 
    // moved from ProcessDehFile, then we don't need the static int i
    for (i = 0; i < EXTRASTATES; i++)  // remember what they start as for deh xref
@@ -3657,7 +3676,11 @@ static void deh_procBexSounds(DEHFILE *fpin, FILE *fpout, char *line)
       if (!found) {
           int sindex = atoi(key);
           if (sindex > 0) {
-              S_sfx[sindex].name = strdup(candidate);
+              int remap_sfx = dsdhacked_remap(sindex, DSDHACKED_SFX);
+              if(fpout)
+                  fprintf(fpout, "Substituting '%s' for DSDHACKED index: %d (remapped to %d)\n",
+                          candidate, sindex, remap_sfx);
+              S_sfx[remap_sfx].name = strdup(candidate);
           }
       }
    }

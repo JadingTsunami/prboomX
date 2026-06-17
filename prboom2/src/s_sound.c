@@ -49,6 +49,7 @@
 #include "lprintf.h"
 #include "sc_man.h"
 #include "e6y.h"
+#include "d_deh.h"
 
 // when to clip out sounds
 // Does not fit the large outdoor areas.
@@ -264,6 +265,8 @@ static void S_StartSoundAtVolume(degenmobj_t *origin, int sfx_id, int volume)
 
   if (sfx_id == sfx_None)
     return;
+
+  sfx_id = dsdhacked_sound_index(sfx_id);
 
   // check for bogus sound #
   if (sfx_id < 1 || sfx_id > num_sfx)
