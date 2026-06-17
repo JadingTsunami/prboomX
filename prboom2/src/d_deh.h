@@ -1123,14 +1123,4 @@ void D_BuildBEXTables(void);
 void deh_changeCompTranslucency(void);
 void deh_applyCompatibility(void);
 
-typedef enum {
-    DSDHACKED_NONE = -1,
-    DSDHACKED_SFX,
-    DSDHACKED_STATE,
-    DSDHACKED_THING,
-    DSDHACKED_SPRITE,
-    DSDHACKED_LAST
-} dsdhacked_type_e;
-
-int dsdhacked_sound_index(int index);
 #endif

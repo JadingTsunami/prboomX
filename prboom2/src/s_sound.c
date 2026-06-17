@@ -154,7 +154,8 @@ void S_Init(int sfxVolume, int musicVolume)
     for (i=1 ; i<num_sfx ; i++)
     {
       sfxinfo_t *sfx = &S_sfx[i];
-      sfx->lumpnum = I_GetSfxLumpNum(sfx);
+      if(sfx->name && sfx->name[0])
+          sfx->lumpnum = I_GetSfxLumpNum(sfx);
 
       if (sfx->lumpnum >= 0)
         W_LockLumpNum(sfx->lumpnum);
@@ -265,8 +266,6 @@ static void S_StartSoundAtVolume(degenmobj_t *origin, int sfx_id, int volume)
 
   if (sfx_id == sfx_None)
     return;
-
-  sfx_id = dsdhacked_sound_index(sfx_id);
 
   // check for bogus sound #
   if (sfx_id < 1 || sfx_id > num_sfx)
