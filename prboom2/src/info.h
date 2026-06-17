@@ -1279,7 +1279,7 @@ typedef enum
   S_PLAY_GDIE9,
 
   EXTRASTATES = 1089, // extra dehacked states
-  NUMSTATES = 4000  /* Counter of how many there are */
+  ORIG_NUMSTATES = 4000  /* Counter of how many there are */
 
 } statenum_t;
 
@@ -1309,7 +1309,7 @@ typedef struct
 } state_t;
 
 /* these are in info.c */
-extern state_t  states[NUMSTATES];
+extern state_t  orig_states[ORIG_NUMSTATES];
 extern const char *sprnames[]; /* 1/17/98 killough - CPhipps - const */
 
 /********************************************************************
@@ -1577,5 +1577,6 @@ typedef struct
 
 /* See p_mobj_h for addition more technical info */
 extern mobjinfo_t mobjinfo[NUMMOBJTYPES];
-
+extern state_t* states;
+extern int num_states;
 #endif

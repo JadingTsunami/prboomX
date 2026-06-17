@@ -72,6 +72,15 @@ char **deh_soundnames;
 sfxinfo_t* S_sfx;
 int num_sfx;
 
+state_t* states;
+statenum_t* seenstate_tab;
+int num_states;
+
+// to hold startup code pointers from INFO.C
+// CPhipps - static
+static actionf_t* deh_codeptr;
+
+
 // e6y: for compatibility with BOOM deh parser
 int deh_strcasecmp(const char *str1, const char *str2)
 {
@@ -134,6 +143,9 @@ static void dsdhacked_install_default_entry(int index, dsdhacked_type_e dsdhacke
             S_sfx[index].volume = - 1;
             break;
         case DSDHACKED_STATE:
+            states[index].sprite = SPR_TNT1;
+            states[index].tics = -1;
+            states[index].nextstate = index;
             break;
         case DSDHACKED_THING:
             break;
@@ -145,7 +157,7 @@ static void dsdhacked_install_default_entry(int index, dsdhacked_type_e dsdhacke
     }
 }
 
-static int dsdhacked_alloc_entry(int index, dsdhacked_type_e dsdhacked_type)
+static void dsdhacked_alloc_entry(int index, dsdhacked_type_e dsdhacked_type)
 {
     switch (dsdhacked_type) {
         case DSDHACKED_SFX:
@@ -158,11 +170,21 @@ static int dsdhacked_alloc_entry(int index, dsdhacked_type_e dsdhacked_type)
                 memset(&S_sfx[num_sfx], 0, (new_num_sfx-num_sfx)*sizeof(sfxinfo_t));
                 memset(&S_sfx_state[num_sfx], 0, (new_num_sfx-num_sfx)*sizeof(dboolean));
                 num_sfx = new_num_sfx;
-            } else if (index <= 0) {
-                return -1;
             }
             break;
         case DSDHACKED_STATE:
+            if (index >= num_states) {
+                int new_num_states = index + 1;
+                states = realloc(states, (new_num_states)*sizeof(state_t));
+                deh_codeptr = realloc(deh_codeptr, (new_num_states)*sizeof(actionf_t));
+                seenstate_tab = realloc(seenstate_tab, (new_num_states)*sizeof(statenum_t));
+                if (!states || !deh_codeptr || !seenstate_tab)
+                    I_Error("Out of memory allocating expanded DSDHACKED states array.");
+                memset(&states[num_states], 0, (new_num_states-num_states)*sizeof(state_t));
+                memset(&deh_codeptr[num_states], 0, (new_num_states-num_states)*sizeof(actionf_t));
+                memset(&seenstate_tab[num_states], 0, (new_num_states-num_states)*sizeof(statenum_t));
+                num_states = new_num_states;
+            }
             break;
         case DSDHACKED_THING:
             break;
@@ -172,7 +194,6 @@ static int dsdhacked_alloc_entry(int index, dsdhacked_type_e dsdhacked_type)
             I_Error("Bad DSDHACKED Type (%d) in dsdhacked_alloc_entry; internal error.", dsdhacked_type);
             break;
     }
-    return index;
 }
 
 static int dsdhacked_map(int index, dsdhacked_type_e dsdhacked_type)
@@ -185,6 +206,7 @@ static int dsdhacked_map(int index, dsdhacked_type_e dsdhacked_type)
             type_last = ORIG_NUMSFX;
             break;
         case DSDHACKED_STATE:
+            type_last = ORIG_NUMSTATES;
             break;
         case DSDHACKED_THING:
             break;
@@ -197,15 +219,11 @@ static int dsdhacked_map(int index, dsdhacked_type_e dsdhacked_type)
 
     // if it's in the original array, return it as it is
     if (index > type_last) {
-        if (dsdhacked_alloc_entry(index, dsdhacked_type)) {
-            dsdhacked_install_default_entry(index, dsdhacked_type);
-        } else {
-            I_Error("Invalid DSDHACKED entry allocation at %d", index);
-        }
+        dsdhacked_alloc_entry(index, dsdhacked_type);
+        dsdhacked_install_default_entry(index, dsdhacked_type);
     }
 
     return index;
-//state_t states[NUMSTATES]
 //mobjinfo_t mobjinfo[NUMMOBJTYPES]
 //const char *sprnames[NUMSPRITES+1]
 }
@@ -1605,15 +1623,12 @@ static const deh_bexptr deh_bexptrs[] = // CPhipps - static const
   {NULL,              "A_NULL"},  // Ty 05/16/98
 };
 
-// to hold startup code pointers from INFO.C
-// CPhipps - static
-static actionf_t deh_codeptr[NUMSTATES];
-
 void D_BuildBEXTables(void)
 {
    int i, j;
 
    // dsdhacked initializations
+   // sfx
    num_sfx = ORIG_NUMSFX;
    S_sfx = calloc(num_sfx, sizeof(sfxinfo_t));
    if (!S_sfx)
@@ -1624,6 +1639,23 @@ void D_BuildBEXTables(void)
    if (!S_sfx_state || !deh_soundnames)
        I_Error("Out of memory allocating sfx tables");
 
+   // states
+   num_states = ORIG_NUMSTATES;
+
+   states = calloc(num_states, sizeof(state_t));
+   if (!states)
+       I_Error("Out of memory allocating global states array");
+   memcpy(states, orig_states, sizeof(state_t)*num_states);
+
+   deh_codeptr = calloc(num_states, sizeof(actionf_t));
+   if (!deh_codeptr)
+       I_Error("Out of memory allocating deh_codeptr");
+   memset(deh_codeptr, 0, sizeof(actionf_t)*num_states);
+
+   seenstate_tab = calloc(num_states, sizeof(statenum_t));
+   if (!seenstate_tab)
+       I_Error("Out of memory allocating seenstate_tab");
+   memset(seenstate_tab, 0, sizeof(statenum_t)*num_states);
 
 
    // moved from ProcessDehFile, then we don't need the static int i
@@ -1631,7 +1663,7 @@ void D_BuildBEXTables(void)
      deh_codeptr[i] = states[i].action;
 
    // initialize extra dehacked states
-   for ( ; i < NUMSTATES; i++)
+   for ( ; i < ORIG_NUMSTATES; i++)
    {
      states[i].sprite = SPR_TNT1;
      states[i].frame = 0;
@@ -2077,14 +2109,16 @@ static void deh_procBexCodePointers(DEHFILE *fpin, FILE* fpout, char *line)
 
       if (fpout) fprintf(fpout,"Processing pointer at index %d: %s\n",
                          indexnum, mnemonic);
-      if (indexnum < 0 || indexnum >= NUMSTATES)
+      if (indexnum < 0)
         {
           if (fpout) fprintf(fpout,"Bad pointer number %d of %d\n",
-                             indexnum, NUMSTATES);
+                             indexnum, num_states);
           return; // killough 10/98: fix SegViol
         }
+      indexnum = dsdhacked_map(indexnum, DSDHACKED_STATE);
       strcpy(key,"A_");  // reusing the key area to prefix the mnemonic
       strcat(key,ptr_lstrip(mnemonic));
+
 
       found = FALSE;
       i= -1; // incremented to start at zero at the top of the loop
@@ -2436,9 +2470,10 @@ static void deh_procFrame(DEHFILE *fpin, FILE* fpout, char *line)
   // killough 8/98: allow hex numbers in input:
   sscanf(inbuffer,"%s %i",key, &indexnum);
   if (fpout) fprintf(fpout,"Processing Frame at index %d: %s\n",indexnum,key);
-  if (indexnum < 0 || indexnum >= NUMSTATES)
-    if (fpout) fprintf(fpout,"Bad frame number %d of %d\n",indexnum, NUMSTATES);
+  if (indexnum < 0)
+    if (fpout) fprintf(fpout,"Bad frame number %d of %d\n",indexnum, num_states);
 
+  indexnum = dsdhacked_map(indexnum, DSDHACKED_STATE);
   while (!dehfeof(fpin) && *inbuffer && (*inbuffer != ' '))
   {
       if (!dehfgets(inbuffer, sizeof(inbuffer), fpin)) break;
@@ -2597,12 +2632,13 @@ static void deh_procPointer(DEHFILE *fpin, FILE* fpout, char *line) // done
     }
 
   if (fpout) fprintf(fpout,"Processing Pointer at index %d: %s\n",indexnum, key);
-  if (indexnum < 0 || indexnum >= NUMSTATES)
+  if (indexnum < 0)
     {
       if (fpout)
-        fprintf(fpout,"Bad pointer number %d of %d\n",indexnum, NUMSTATES);
+        fprintf(fpout,"Bad pointer number %d of %d\n",indexnum, num_states);
       return;
     }
+  indexnum = dsdhacked_map(indexnum, DSDHACKED_STATE);
 
   while (!dehfeof(fpin) && *inbuffer && (*inbuffer != ' '))
     {
@@ -2615,12 +2651,7 @@ static void deh_procPointer(DEHFILE *fpin, FILE* fpout, char *line) // done
           continue;
         }
 
-      if (value >= NUMSTATES)
-        {
-          if (fpout)
-            fprintf(fpout,"Bad pointer number %ld of %d\n",(long)value, NUMSTATES);
-          return;
-        }
+      value = dsdhacked_map(value, DSDHACKED_STATE);
 
       if (!deh_strcasecmp(key,deh_state[4]))  // Codep frame (not set in Frame deh block)
         {

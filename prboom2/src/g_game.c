@@ -2939,13 +2939,13 @@ void G_SetFastParms(int fast_pending)
   if (fast != fast_pending) {     /* only change if necessary */
     if ((fast = fast_pending))
       {
-        for (i=0; i<=NUMSTATES; i++)
+        for (i=0; i<=num_states; i++)
           if ((states[i].mbf21stateflags & STF_SKILL5FAST) && (states[i].tics != 1 || demo_compatibility)) // killough 4/10/98
             states[i].tics >>= 1;  // don't change 1->0 since it causes cycles
       }
     else
       {
-        for (i=0; i<=NUMSTATES; i++)
+        for (i=0; i<=num_states; i++)
             if (states[i].mbf21stateflags & STF_SKILL5FAST)
                 states[i].tics <<= 1;
       }
