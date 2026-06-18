@@ -68,7 +68,7 @@ dboolean P_SetMobjState(mobj_t* mobj,statenum_t state)
 
   // killough 4/9/98: remember states seen, to detect cycles:
 
-  static statenum_t seenstate_tab[NUMSTATES]; // fast transition table
+  extern statenum_t* seenstate_tab; // fast transition table
   statenum_t *seenstate = seenstate_tab;      // pointer to table
   static int recursion;                       // detects recursion
   statenum_t i = state;                       // initial state
@@ -76,7 +76,7 @@ dboolean P_SetMobjState(mobj_t* mobj,statenum_t state)
   statenum_t* tempstate = NULL;               // for use with recursion
 
   if (recursion++)                            // if recursion detected,
-    seenstate = tempstate = calloc(NUMSTATES, sizeof(statenum_t)); // allocate state table
+    seenstate = tempstate = calloc(num_states, sizeof(statenum_t)); // allocate state table
 
   do
     {
@@ -1080,20 +1080,20 @@ static PUREFUNC int P_FindDoomedNum(unsigned type)
 
   if (!hash)
     {
-      hash = Z_Malloc(sizeof *hash * NUMMOBJTYPES, PU_CACHE, (void **) &hash);
-      for (i=0; i<NUMMOBJTYPES; i++)
-  hash[i].first = NUMMOBJTYPES;
-      for (i=0; i<NUMMOBJTYPES; i++)
+      hash = Z_Malloc(sizeof *hash * num_mobjtypes, PU_CACHE, (void **) &hash);
+      for (i=0; i<num_mobjtypes; i++)
+  hash[i].first = num_mobjtypes;
+      for (i=0; i<num_mobjtypes; i++)
   if (mobjinfo[i].doomednum != -1)
     {
-      unsigned h = (unsigned) mobjinfo[i].doomednum % NUMMOBJTYPES;
+      unsigned h = (unsigned) mobjinfo[i].doomednum % num_mobjtypes;
       hash[i].next = hash[h].first;
       hash[h].first = i;
     }
     }
 
-  i = hash[type % NUMMOBJTYPES].first;
-  while ((i < NUMMOBJTYPES) && ((unsigned)mobjinfo[i].doomednum != type))
+  i = hash[type % num_mobjtypes].first;
+  while ((i < num_mobjtypes) && ((unsigned)mobjinfo[i].doomednum != type))
     i = hash[i].next;
   return i;
 }
@@ -1373,7 +1373,7 @@ mobj_t* P_SpawnMapThing (const mapthing_t* mthing, int index)
     if(HelperThing != -1) // haleyjd 9/22/99: deh substitution
     {
       int type = HelperThing - 1;
-      if(type >= 0 && type < NUMMOBJTYPES)
+      if(type >= 0 && type < num_mobjtypes)
       {
         i = type;
       }
@@ -1443,7 +1443,7 @@ mobj_t* P_SpawnMapThing (const mapthing_t* mthing, int index)
   // Do not abort because of an unknown thing. Ignore it, but post a
   // warning message for the player.
 
-  if (i == NUMMOBJTYPES)
+  if (i == num_mobjtypes)
   {
     lprintf(LO_INFO, "P_SpawnMapThing: Unknown Thing type %i at (%i, %i)\n", thingtype, mthing->x, mthing->y);
     return NULL;

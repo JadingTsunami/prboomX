@@ -748,7 +748,7 @@ void R_SetSpriteByNum(patchnum_t *patchnum, int lump)
 int R_SetSpriteByIndex(patchnum_t *patchnum, spritenum_t item)
 {
   int result = false;
-  if (item < NUMSPRITES)
+  if (item < num_sprites - 1)
   {
     int lump = firstspritelump + sprites[item].spriteframes->lump[0];
     R_SetSpriteByNum(patchnum, lump);

@@ -49,6 +49,7 @@
 #include "lprintf.h"
 #include "sc_man.h"
 #include "e6y.h"
+#include "d_deh.h"
 
 // when to clip out sounds
 // Does not fit the large outdoor areas.
@@ -150,10 +151,11 @@ void S_Init(int sfxVolume, int musicVolume)
     memset(sobjs, 0, sizeof(sobjs));
 
     // Note that sounds have not been cached (yet).
-    for (i=1 ; i<NUMSFX ; i++)
+    for (i=1 ; i<num_sfx ; i++)
     {
       sfxinfo_t *sfx = &S_sfx[i];
-      sfx->lumpnum = I_GetSfxLumpNum(sfx);
+      if(sfx->name && sfx->name[0])
+          sfx->lumpnum = I_GetSfxLumpNum(sfx);
 
       if (sfx->lumpnum >= 0)
         W_LockLumpNum(sfx->lumpnum);
@@ -266,7 +268,7 @@ static void S_StartSoundAtVolume(degenmobj_t *origin, int sfx_id, int volume)
     return;
 
   // check for bogus sound #
-  if (sfx_id < 1 || sfx_id > NUMSFX)
+  if (sfx_id < 1 || sfx_id > num_sfx)
     I_Error("S_StartSoundAtVolume: Bad sfx #: %d", sfx_id);
 
   sfx = &S_sfx[sfx_id];

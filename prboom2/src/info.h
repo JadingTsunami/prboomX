@@ -210,7 +210,7 @@ typedef enum
   SPR_SP80, SPR_SP81, SPR_SP82, SPR_SP83, SPR_SP84, SPR_SP85, SPR_SP86, SPR_SP87, SPR_SP88, SPR_SP89,
   SPR_SP90, SPR_SP91, SPR_SP92, SPR_SP93, SPR_SP94, SPR_SP95, SPR_SP96, SPR_SP97, SPR_SP98, SPR_SP99,
 
-  NUMSPRITES  /* counter of how many there are */
+  ORIG_NUMSPRITES  /* counter of how many there are */
 
 } spritenum_t;
 
@@ -1279,7 +1279,7 @@ typedef enum
   S_PLAY_GDIE9,
 
   EXTRASTATES = 1089, // extra dehacked states
-  NUMSTATES = 4000  /* Counter of how many there are */
+  ORIG_NUMSTATES = 4000  /* Counter of how many there are */
 
 } statenum_t;
 
@@ -1309,8 +1309,7 @@ typedef struct
 } state_t;
 
 /* these are in info.c */
-extern state_t  states[NUMSTATES];
-extern const char *sprnames[]; /* 1/17/98 killough - CPhipps - const */
+extern state_t  orig_states[ORIG_NUMSTATES];
 
 /********************************************************************
  * Thing enumeration -- must match info.c                           *
@@ -1505,7 +1504,7 @@ typedef enum {
   MT_EXTRA90, MT_EXTRA91, MT_EXTRA92, MT_EXTRA93, MT_EXTRA94,
   MT_EXTRA95, MT_EXTRA96, MT_EXTRA97, MT_EXTRA98, MT_EXTRA99,
 
-  NUMMOBJTYPES  // Counter of how many there are
+  ORIG_NUMMOBJTYPES  // Counter of how many there are
 } mobjtype_t;
 
 /********************************************************************
@@ -1575,7 +1574,13 @@ typedef struct
 
 } mobjinfo_t;
 
+extern mobjinfo_t orig_mobjinfo[];
 /* See p_mobj_h for addition more technical info */
-extern mobjinfo_t mobjinfo[NUMMOBJTYPES];
-
+extern mobjinfo_t* mobjinfo;
+extern int num_mobjtypes;
+extern state_t* states;
+extern int num_states;
+extern int num_sprites;
+extern char **sprnames;
+extern const char* orig_sprnames[];
 #endif

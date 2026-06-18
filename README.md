@@ -6,7 +6,7 @@ This is my own personal fork of PrBoom-Plus. It contains quality-of-play upgrade
 
 # Installation
 
-* [Latest release](https://github.com/JadingTsunami/prboomX/releases/tag/prboomX-2.8.1)
+* [Latest release](https://github.com/JadingTsunami/prboomX/releases/tag/prboomX-2.9.0)
 * [Development builds](https://github.com/JadingTsunami/prboomX/actions)
 
 Install [PrBoom-Plus](https://github.com/coelckers/prboom-plus) and place the binaries for prboomX alongside your `prboom-plus` executable. Run the `prboomX` executable to launch prboomX instead. Your PrBoom-Plus configuration and save data will not be affected; you can run both in parallel.
@@ -15,7 +15,8 @@ Install [PrBoom-Plus](https://github.com/coelckers/prboom-plus) and place the bi
 
 # Features
 
-* MBF21 support
+* [MBF21](https://github.com/kraflab/mbf21/blob/master/docs/spec.md) support
+* [DSDHACKED](https://github.com/kraflab/dsda-doom/blob/master/docs/dsdhacked.md) support
 * Zip file support
     * Note all WAD/DEH/BEX in the zip will be loaded
 * Drop-down console (default key bind: `~`)
@@ -515,6 +516,7 @@ Sub-bullets list accepted alternate names for weapons.
 
 # Revision History
 
+* 2.9.0 - Added DSDHACKED support.
 * 2.8.1 - Hotfix for menu crash bug (thanks to Doomworld user [RicemanRHys](https://www.doomworld.com/profile/64480-ricemanrhys/) for the report).
 * 2.8.0 - Added MBF21 support.
 * 2.7.0 - Initial release.

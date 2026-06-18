@@ -60,6 +60,35 @@
 #define TRUE 1
 #define FALSE 0
 
+
+// haleyjd: support for BEX SPRITES, SOUNDS, and MUSIC
+char *deh_musicnames[NUMMUSIC + 1];
+dboolean S_music_state[NUMMUSIC];
+
+// dsdhacked externalizations
+char **deh_spritenames;
+dboolean *sprnames_state;
+int num_sprites;
+char **sprnames;
+
+dboolean* S_sfx_state;
+char **deh_soundnames;
+
+sfxinfo_t* S_sfx;
+int num_sfx;
+
+state_t* states;
+statenum_t* seenstate_tab;
+int num_states;
+
+mobjinfo_t* mobjinfo;
+int num_mobjtypes;
+
+// to hold startup code pointers from INFO.C
+// CPhipps - static
+static actionf_t* deh_codeptr;
+
+
 // e6y: for compatibility with BOOM deh parser
 int deh_strcasecmp(const char *str1, const char *str2)
 {
@@ -103,6 +132,139 @@ typedef struct {
   /* else, !lump, and f is the file being read */
   FILE* f;
 } DEHFILE;
+
+typedef enum {
+    DSDHACKED_NONE = -1,
+    DSDHACKED_SFX,
+    DSDHACKED_STATE,
+    DSDHACKED_THING,
+    DSDHACKED_SPRITE,
+    DSDHACKED_LAST
+} dsdhacked_type_e;
+
+static void dsdhacked_install_default_entry(int index, dsdhacked_type_e dsdhacked_type)
+{
+    switch (dsdhacked_type) {
+        case DSDHACKED_SFX:
+            S_sfx[index].priority = 127;
+            S_sfx[index].pitch = -1;
+            S_sfx[index].volume = - 1;
+            break;
+        case DSDHACKED_STATE:
+            states[index].sprite = SPR_TNT1;
+            states[index].tics = -1;
+            states[index].nextstate = index;
+            break;
+        case DSDHACKED_THING:
+            mobjinfo[index].fastspeed = MBF21_FAST_SPEED_DEFAULT;
+            mobjinfo[index].meleerange = 64*FRACUNIT;
+            break;
+        case DSDHACKED_SPRITE:
+            // no defaults for sprites, per spec
+            break;
+        default:
+            I_Error("Bad DSDHACKED Type (%d) in dsdhacked_install_default_entry; internal error.", dsdhacked_type);
+            break;
+    }
+}
+
+static dboolean dsdhacked_alloc_entry(int index, dsdhacked_type_e dsdhacked_type)
+{
+    dboolean created = FALSE;
+    switch (dsdhacked_type) {
+        case DSDHACKED_SFX:
+            if (index >= num_sfx) {
+                int new_num_sfx = index + 1;
+                S_sfx = realloc(S_sfx, (new_num_sfx)*(sizeof(sfxinfo_t)));
+                S_sfx_state = realloc(S_sfx_state, (new_num_sfx)*sizeof(dboolean));
+                if (!S_sfx || !S_sfx_state)
+                    I_Error("Out of memory in dsdhacked_alloc_entry");
+                memset(&S_sfx[num_sfx], 0, (new_num_sfx-num_sfx)*sizeof(sfxinfo_t));
+                memset(&S_sfx_state[num_sfx], 0, (new_num_sfx-num_sfx)*sizeof(dboolean));
+                num_sfx = new_num_sfx;
+                created = TRUE;
+            }
+            break;
+        case DSDHACKED_STATE:
+            if (index >= num_states) {
+                int new_num_states = index + 1;
+                states = realloc(states, (new_num_states)*sizeof(state_t));
+                deh_codeptr = realloc(deh_codeptr, (new_num_states)*sizeof(actionf_t));
+                seenstate_tab = realloc(seenstate_tab, (new_num_states)*sizeof(statenum_t));
+                if (!states || !deh_codeptr || !seenstate_tab)
+                    I_Error("Out of memory allocating expanded DSDHACKED states array.");
+                memset(&states[num_states], 0, (new_num_states-num_states)*sizeof(state_t));
+                memset(&deh_codeptr[num_states], 0, (new_num_states-num_states)*sizeof(actionf_t));
+                memset(&seenstate_tab[num_states], 0, (new_num_states-num_states)*sizeof(statenum_t));
+                num_states = new_num_states;
+                created = TRUE;
+            }
+            break;
+        case DSDHACKED_THING:
+            if (index >= num_mobjtypes) {
+                int new_num_mobjtypes = index + 1;
+                mobjinfo = realloc(mobjinfo, (new_num_mobjtypes)*sizeof(mobjinfo_t));
+                if (!mobjinfo)
+                    I_Error("Out of memory allocating expanded DSDHACKED mobjinfo array.");
+                memset(&mobjinfo[num_mobjtypes], 0, (new_num_mobjtypes-num_mobjtypes)*sizeof(mobjinfo_t));
+                num_mobjtypes = new_num_mobjtypes;
+                created = TRUE;
+            }
+            break;
+        case DSDHACKED_SPRITE:
+            if (index >= num_sprites) {
+                int new_num_sprites = index + 1;
+                sprnames = realloc(sprnames, (new_num_sprites)*sizeof(char*));
+                deh_spritenames = realloc(deh_spritenames, (new_num_sprites)*sizeof(char*));
+                sprnames_state = realloc(sprnames_state, (new_num_sprites)*sizeof(dboolean));
+                if (!sprnames || !deh_spritenames || !sprnames_state)
+                    I_Error("Out of memory allocating expanded DSDHACKED sprite names array.");
+                memset(&sprnames[num_sprites], 0, (new_num_sprites-num_sprites)*sizeof(char*));
+                memset(&deh_spritenames[num_sprites], 0, (new_num_sprites-num_sprites)*sizeof(char*));
+                memset(&sprnames_state[num_sprites], 0, (new_num_sprites-num_sprites)*sizeof(dboolean));
+                num_sprites = new_num_sprites;
+                created = TRUE;
+            }
+            break;
+        default:
+            I_Error("Bad DSDHACKED Type (%d) in dsdhacked_alloc_entry; internal error.", dsdhacked_type);
+            break;
+    }
+    return created;
+}
+
+static int dsdhacked_map(int index, dsdhacked_type_e dsdhacked_type)
+{
+    // get last original doom index for type
+    int type_last = -1;
+
+    switch (dsdhacked_type) {
+        case DSDHACKED_SFX:
+            type_last = ORIG_NUMSFX;
+            break;
+        case DSDHACKED_STATE:
+            type_last = ORIG_NUMSTATES;
+            break;
+        case DSDHACKED_THING:
+            type_last = ORIG_NUMMOBJTYPES;
+            break;
+        case DSDHACKED_SPRITE:
+            type_last = ORIG_NUMSPRITES;
+            break;
+        default:
+            I_Error("Bad DSDHACKED Type (%d) in dsdhacked_map; internal error.", dsdhacked_type);
+            break;
+    }
+
+    // if it's in the original array, return it as it is
+    if (index >= type_last) {
+        if (dsdhacked_alloc_entry(index, dsdhacked_type))
+            dsdhacked_install_default_entry(index, dsdhacked_type);
+    }
+
+    return index;
+//const char *sprnames[NUMSPRITES+1]
+}
 
 // killough 10/98: emulate IO whether input really comes from a file or not
 
@@ -1499,25 +1661,65 @@ static const deh_bexptr deh_bexptrs[] = // CPhipps - static const
   {NULL,              "A_NULL"},  // Ty 05/16/98
 };
 
-// to hold startup code pointers from INFO.C
-// CPhipps - static
-static actionf_t deh_codeptr[NUMSTATES];
-
-// haleyjd: support for BEX SPRITES, SOUNDS, and MUSIC
-char *deh_spritenames[NUMSPRITES + 1];
-char *deh_musicnames[NUMMUSIC + 1];
-char *deh_soundnames[NUMSFX + 1];
-
 void D_BuildBEXTables(void)
 {
    int i, j;
+
+   // dsdhacked initializations
+   // sfx
+   num_sfx = ORIG_NUMSFX;
+   S_sfx = calloc(num_sfx, sizeof(sfxinfo_t));
+   if (!S_sfx)
+       I_Error("Out of memory allocating S_sfx");
+   memcpy(S_sfx, orig_S_sfx, sizeof(sfxinfo_t)*num_sfx);
+   S_sfx_state = calloc(num_sfx, sizeof(dboolean));
+   deh_soundnames = calloc(num_sfx + 1, sizeof(char*));
+   if (!S_sfx_state || !deh_soundnames)
+       I_Error("Out of memory allocating sfx tables");
+
+   // states
+   num_states = ORIG_NUMSTATES;
+
+   states = calloc(num_states, sizeof(state_t));
+   if (!states)
+       I_Error("Out of memory allocating global states array");
+   memcpy(states, orig_states, sizeof(state_t)*num_states);
+
+   deh_codeptr = calloc(num_states, sizeof(actionf_t));
+   if (!deh_codeptr)
+       I_Error("Out of memory allocating deh_codeptr");
+   memset(deh_codeptr, 0, sizeof(actionf_t)*num_states);
+
+   seenstate_tab = calloc(num_states, sizeof(statenum_t));
+   if (!seenstate_tab)
+       I_Error("Out of memory allocating seenstate_tab");
+   memset(seenstate_tab, 0, sizeof(statenum_t)*num_states);
+
+   // things
+   num_mobjtypes = ORIG_NUMMOBJTYPES;
+   mobjinfo = calloc(num_mobjtypes, sizeof(mobjinfo_t));
+   if (!mobjinfo)
+       I_Error("Out of memory allocating mobjinfo");
+   memcpy(mobjinfo, orig_mobjinfo, sizeof(mobjinfo_t)*num_mobjtypes);
+
+   // sprites
+   num_sprites = ORIG_NUMSPRITES + 1;
+   sprnames = calloc(num_sprites, sizeof(char*));
+   deh_spritenames = calloc(num_sprites, sizeof(char*));
+   sprnames_state = calloc(num_sprites, sizeof(dboolean));
+   if (!sprnames || !deh_spritenames || !sprnames_state)
+       I_Error("Out of memory allocating sprite names");
+
+   memcpy(sprnames, orig_sprnames, sizeof(char*)*num_sprites);
+   memset(deh_spritenames, 0, sizeof(char*)*num_sprites);
+   memset(sprnames_state, 0, sizeof(dboolean)*num_sprites);
 
    // moved from ProcessDehFile, then we don't need the static int i
    for (i = 0; i < EXTRASTATES; i++)  // remember what they start as for deh xref
      deh_codeptr[i] = states[i].action;
 
    // initialize extra dehacked states
-   for ( ; i < NUMSTATES; i++)
+   for ( ; i < ORIG_NUMSTATES; i++)
    {
      states[i].sprite = SPR_TNT1;
      states[i].frame = 0;
@@ -1536,25 +1738,25 @@ void D_BuildBEXTables(void)
      states[i].mbf21stateflags = 0;
    }
 
-   for(i = 0; i < NUMSPRITES; i++)
+   for(i = 0; i < num_sprites - 1; i++)
       deh_spritenames[i] = strdup(sprnames[i]);
-   deh_spritenames[NUMSPRITES] = NULL;
+   deh_spritenames[num_sprites] = NULL;
 
    for(i = 1; i < NUMMUSIC; i++)
       deh_musicnames[i] = strdup(S_music[i].name);
    deh_musicnames[0] = deh_musicnames[NUMMUSIC] = NULL;
 
-   for(i = 1; i < NUMSFX; i++) {
+   for(i = 1; i < num_sfx; i++) {
       if (S_sfx[i].name != NULL) {
          deh_soundnames[i] = strdup(S_sfx[i].name);
       } else { // This is possible due to how DEHEXTRA has turned S_sfx into a sparse array
          deh_soundnames[i] = NULL;
       }
    }
-   deh_soundnames[0] = deh_soundnames[NUMSFX] = NULL;
+   deh_soundnames[0] = deh_soundnames[num_sfx] = NULL;
 
   // ferk: initialize Thing extra properties (keeping vanilla props in info.c)
-  for (i = 0; i < NUMMOBJTYPES; i++)
+  for (i = 0; i < num_mobjtypes; i++)
   {
     // mobj id for item dropped on death
     switch (i)
@@ -1675,7 +1877,7 @@ int deh_mega_health;
 dboolean IsDehMaxHealth = false;
 dboolean IsDehMaxSoul = false;
 dboolean IsDehMegaHealth = false;
-dboolean DEH_mobjinfo_bits[NUMMOBJTYPES] = {0};
+dboolean DEH_mobjinfo_bits[ORIG_NUMMOBJTYPES] = {0};
 
 void deh_changeCompTranslucency(void)
 {
@@ -1963,14 +2165,16 @@ static void deh_procBexCodePointers(DEHFILE *fpin, FILE* fpout, char *line)
 
       if (fpout) fprintf(fpout,"Processing pointer at index %d: %s\n",
                          indexnum, mnemonic);
-      if (indexnum < 0 || indexnum >= NUMSTATES)
+      if (indexnum < 0)
         {
           if (fpout) fprintf(fpout,"Bad pointer number %d of %d\n",
-                             indexnum, NUMSTATES);
+                             indexnum, num_states);
           return; // killough 10/98: fix SegViol
         }
+      indexnum = dsdhacked_map(indexnum, DSDHACKED_STATE);
       strcpy(key,"A_");  // reusing the key area to prefix the mnemonic
       strcat(key,ptr_lstrip(mnemonic));
+
 
       found = FALSE;
       i= -1; // incremented to start at zero at the top of the loop
@@ -2052,7 +2256,7 @@ static uint_64_t getConvertedDEHBits(uint_64_t bits) {
 //---------------------------------------------------------------------------
 static void setMobjInfoValue(int mobjInfoIndex, int keyIndex, uint_64_t value) {
   mobjinfo_t *mi;
-  if (mobjInfoIndex >= NUMMOBJTYPES || mobjInfoIndex < 0) return;
+  if ( mobjInfoIndex < 0) return;
   mi = &mobjinfo[mobjInfoIndex];
   switch (keyIndex) {
     case 0: mi->doomednum = (int)value; return;
@@ -2169,6 +2373,7 @@ static void deh_procThing(DEHFILE *fpin, FILE* fpout, char *line)
   // Note that the mobjinfo[] array is base zero, but object numbers
   // in the dehacked file start with one.  Grumble.
   --indexnum;
+  indexnum = dsdhacked_map(indexnum, DSDHACKED_THING);
 
   // now process the stuff
   // Note that for Things we can look up the key and use its offset
@@ -2246,7 +2451,8 @@ static void deh_procThing(DEHFILE *fpin, FILE* fpout, char *line)
           if (bGetData==1) { // proff
             value = getConvertedDEHBits(value);
             mobjinfo[indexnum].flags = value;
-            DEH_mobjinfo_bits[indexnum] = true; //e6y: changed by DEH
+            if (indexnum < ORIG_NUMMOBJTYPES)
+                DEH_mobjinfo_bits[indexnum] = true; //e6y: changed by DEH
           }
           else {
             // figure out what the bits are
@@ -2284,7 +2490,8 @@ static void deh_procThing(DEHFILE *fpin, FILE* fpout, char *line)
               );
             }
             mobjinfo[indexnum].flags = value; // e6y
-            DEH_mobjinfo_bits[indexnum] = true; //e6y: changed by DEH
+            if (indexnum < ORIG_NUMMOBJTYPES)
+                DEH_mobjinfo_bits[indexnum] = true; //e6y: changed by DEH
           }
         }
         if (fpout) {
@@ -2321,9 +2528,10 @@ static void deh_procFrame(DEHFILE *fpin, FILE* fpout, char *line)
   // killough 8/98: allow hex numbers in input:
   sscanf(inbuffer,"%s %i",key, &indexnum);
   if (fpout) fprintf(fpout,"Processing Frame at index %d: %s\n",indexnum,key);
-  if (indexnum < 0 || indexnum >= NUMSTATES)
-    if (fpout) fprintf(fpout,"Bad frame number %d of %d\n",indexnum, NUMSTATES);
+  if (indexnum < 0)
+    if (fpout) fprintf(fpout,"Bad frame number %d of %d\n",indexnum, num_states);
 
+  indexnum = dsdhacked_map(indexnum, DSDHACKED_STATE);
   while (!dehfeof(fpin) && *inbuffer && (*inbuffer != ' '))
   {
       if (!dehfgets(inbuffer, sizeof(inbuffer), fpin)) break;
@@ -2482,12 +2690,13 @@ static void deh_procPointer(DEHFILE *fpin, FILE* fpout, char *line) // done
     }
 
   if (fpout) fprintf(fpout,"Processing Pointer at index %d: %s\n",indexnum, key);
-  if (indexnum < 0 || indexnum >= NUMSTATES)
+  if (indexnum < 0)
     {
       if (fpout)
-        fprintf(fpout,"Bad pointer number %d of %d\n",indexnum, NUMSTATES);
+        fprintf(fpout,"Bad pointer number %d of %d\n",indexnum, num_states);
       return;
     }
+  indexnum = dsdhacked_map(indexnum, DSDHACKED_STATE);
 
   while (!dehfeof(fpin) && *inbuffer && (*inbuffer != ' '))
     {
@@ -2500,12 +2709,7 @@ static void deh_procPointer(DEHFILE *fpin, FILE* fpout, char *line) // done
           continue;
         }
 
-      if (value >= NUMSTATES)
-        {
-          if (fpout)
-            fprintf(fpout,"Bad pointer number %ld of %d\n",(long)value, NUMSTATES);
-          return;
-        }
+      value = dsdhacked_map(value, DSDHACKED_STATE);
 
       if (!deh_strcasecmp(key,deh_state[4]))  // Codep frame (not set in Frame deh block)
         {
@@ -2554,9 +2758,11 @@ static void deh_procSounds(DEHFILE *fpin, FILE* fpout, char *line)
   sscanf(inbuffer,"%s %i",key, &indexnum);
   if (fpout) fprintf(fpout,"Processing Sounds at index %d: %s\n",
                      indexnum, key);
-  if (indexnum < 0 || indexnum >= NUMSFX)
+  if (indexnum < 0)
     if (fpout) fprintf(fpout,"Bad sound number %d of %d\n",
-                       indexnum, NUMSFX);
+                       indexnum, num_sfx);
+
+  indexnum = dsdhacked_map(indexnum, DSDHACKED_SFX);
 
   while (!dehfeof(fpin) && *inbuffer && (*inbuffer != ' '))
     {
@@ -2757,6 +2963,8 @@ static void deh_procSprite(DEHFILE *fpin, FILE* fpout, char *line) // Not suppor
 
   // killough 8/98: allow hex numbers in input:
   sscanf(inbuffer,"%s %i",key, &indexnum);
+
+  // jds: no dsdhacked since this does nothing
   if (fpout) fprintf(fpout,
                      "Ignoring Sprite offset change at index %d: %s\n",indexnum, key);
   while (!dehfeof(fpin) && *inbuffer && (*inbuffer != ' '))
@@ -3038,9 +3246,6 @@ static void deh_procText(DEHFILE *fpin, FILE* fpout, char *line)
   // BOSSBOS2  BOS2BOSS;   RUNNINSTALKS  STALKSRUNNIN
   // It corrects buggy behaviour on "All Hell is Breaking Loose" TC
   // http://www.doomworld.com/idgames/index.php?id=6480 
-  static dboolean sprnames_state[NUMSPRITES+1];
-  static dboolean S_sfx_state[NUMSFX];
-  static dboolean S_music_state[NUMMUSIC];
 
   // Ty 04/11/98 - Included file may have NOTEXT skip flag set
   if (includenotext) // flag to skip included deh-style text
@@ -3076,7 +3281,7 @@ static void deh_procText(DEHFILE *fpin, FILE* fpout, char *line)
   if (fromlen==4 && tolen==4)
     {
       i=0;
-      while (sprnames[i])  // null terminated list in info.c //jff 3/19/98
+      while (i < num_sprites && !found)  // null terminated list in info.c //jff 3/19/98
         {                                                      //check pointer
           if (!strnicmp(sprnames[i],inbuffer,fromlen) && !sprnames_state[i])         //not first char
             {
@@ -3112,7 +3317,7 @@ static void deh_procText(DEHFILE *fpin, FILE* fpout, char *line)
                              "Warning: Mismatched lengths from=%d, to=%d, used %d\n",
                              fromlen, tolen, usedlen);
         // Try sound effects entries - see sounds.c
-        for (i=1; i<NUMSFX; i++)
+        for (i=1; i<num_sfx; i++)
           {
             // skip empty dummy entries in S_sfx[]
             if (!S_sfx[i].name) continue;
@@ -3384,6 +3589,7 @@ static void deh_procBexSprites(DEHFILE *fpin, FILE *fpout, char *line)
    char *strval;  // holds the string value of the line
    char candidate[5];
    int  rover;
+   dboolean found = FALSE;
 
    if(fpout)
       fprintf(fpout,"Processing sprite name substitution\n");
@@ -3426,9 +3632,20 @@ static void deh_procBexSprites(DEHFILE *fpin, FILE *fpout, char *line)
 	               candidate, deh_spritenames[rover]);
 
 	    sprnames[rover] = strdup(candidate);
+        found = TRUE;
 	    break;
 	 }
 	 rover++;
+      }
+
+      if (!found) {
+          int sindex = atoi(key);
+          if (sindex > 0) {
+              int remap_sprite = dsdhacked_map(sindex, DSDHACKED_SPRITE);
+              if(fpout)
+                  fprintf(fpout, "Substituting '%s' for DSDHACKED sprite index: %d (remapped to %d)\n", candidate, sindex, remap_sprite);
+              sprnames[remap_sprite] = strdup(candidate);
+          }
       }
    }
 }
@@ -3443,6 +3660,7 @@ static void deh_procBexSounds(DEHFILE *fpin, FILE *fpout, char *line)
    char candidate[7];
    int  rover;
    size_t len;
+   dboolean found = FALSE;
    
    if(fpout)
       fprintf(fpout,"Processing sound name substitution\n");
@@ -3486,9 +3704,20 @@ static void deh_procBexSounds(DEHFILE *fpin, FILE *fpout, char *line)
 	               candidate, deh_soundnames[rover]);
 
 	    S_sfx[rover].name = strdup(candidate);
+        found = TRUE;
 	    break;
 	 }
 	 rover++;
+      }
+
+      if (!found) {
+          int sindex = atoi(key);
+          if (sindex > 0) {
+              int remap_sfx = dsdhacked_map(sindex, DSDHACKED_SFX);
+              if(fpout)
+                  fprintf(fpout, "Substituting '%s' for DSDHACKED index: %d (remapped to %d)\n", candidate, sindex, remap_sfx);
+              S_sfx[remap_sfx].name = strdup(candidate);
+          }
       }
    }
 }
