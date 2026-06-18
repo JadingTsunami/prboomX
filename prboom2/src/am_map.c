@@ -2040,7 +2040,7 @@ static void AM_ProcessNiceThing(mobj_t* mobj, angle_t angle, fixed_t x, fixed_t 
   else
   {
     i = 0;
-    while (icons[i].sprite < num_sprites)
+    while (icons[i].sprite < num_sprites - 1)
     {
       if (mobj->sprite == icons[i].sprite)
       {
