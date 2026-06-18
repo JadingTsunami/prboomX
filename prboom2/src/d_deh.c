@@ -76,6 +76,9 @@ state_t* states;
 statenum_t* seenstate_tab;
 int num_states;
 
+mobjinfo_t* mobjinfo;
+int num_mobjtypes;
+
 // to hold startup code pointers from INFO.C
 // CPhipps - static
 static actionf_t* deh_codeptr;
@@ -148,8 +151,11 @@ static void dsdhacked_install_default_entry(int index, dsdhacked_type_e dsdhacke
             states[index].nextstate = index;
             break;
         case DSDHACKED_THING:
+            mobjinfo[index].fastspeed = MBF21_FAST_SPEED_DEFAULT;
+            mobjinfo[index].meleerange = 64*FRACUNIT;
             break;
         case DSDHACKED_SPRITE:
+            // no defaults for sprites, per spec
             break;
         default:
             I_Error("Bad DSDHACKED Type (%d) in dsdhacked_install_default_entry; internal error.", dsdhacked_type);
@@ -187,6 +193,14 @@ static void dsdhacked_alloc_entry(int index, dsdhacked_type_e dsdhacked_type)
             }
             break;
         case DSDHACKED_THING:
+            if (index >= num_mobjtypes) {
+                int new_num_mobjtypes = index + 1;
+                mobjinfo = realloc(mobjinfo, (new_num_mobjtypes)*sizeof(mobjinfo_t));
+                if (!mobjinfo)
+                    I_Error("Out of memory allocating expanded DSDHACKED mobjinfo array.");
+                memset(&mobjinfo[num_mobjtypes], 0, (new_num_mobjtypes-num_mobjtypes)*sizeof(mobjinfo_t));
+                num_mobjtypes = new_num_mobjtypes;
+            }
             break;
         case DSDHACKED_SPRITE:
             break;
@@ -209,6 +223,7 @@ static int dsdhacked_map(int index, dsdhacked_type_e dsdhacked_type)
             type_last = ORIG_NUMSTATES;
             break;
         case DSDHACKED_THING:
+            type_last = ORIG_NUMMOBJTYPES;
             break;
         case DSDHACKED_SPRITE:
             break;
@@ -224,7 +239,6 @@ static int dsdhacked_map(int index, dsdhacked_type_e dsdhacked_type)
     }
 
     return index;
-//mobjinfo_t mobjinfo[NUMMOBJTYPES]
 //const char *sprnames[NUMSPRITES+1]
 }
 
@@ -1657,6 +1671,12 @@ void D_BuildBEXTables(void)
        I_Error("Out of memory allocating seenstate_tab");
    memset(seenstate_tab, 0, sizeof(statenum_t)*num_states);
 
+   // things
+   num_mobjtypes = ORIG_NUMMOBJTYPES;
+   mobjinfo = calloc(num_mobjtypes, sizeof(mobjinfo_t));
+   if (!mobjinfo)
+       I_Error("Out of memory allocating mobjinfo");
+   memcpy(mobjinfo, orig_mobjinfo, sizeof(mobjinfo_t)*num_mobjtypes);
 
    // moved from ProcessDehFile, then we don't need the static int i
    for (i = 0; i < EXTRASTATES; i++)  // remember what they start as for deh xref
@@ -1700,7 +1720,7 @@ void D_BuildBEXTables(void)
    deh_soundnames[0] = deh_soundnames[num_sfx] = NULL;
 
   // ferk: initialize Thing extra properties (keeping vanilla props in info.c)
-  for (i = 0; i < NUMMOBJTYPES; i++)
+  for (i = 0; i < num_mobjtypes; i++)
   {
     // mobj id for item dropped on death
     switch (i)
@@ -1821,7 +1841,7 @@ int deh_mega_health;
 dboolean IsDehMaxHealth = false;
 dboolean IsDehMaxSoul = false;
 dboolean IsDehMegaHealth = false;
-dboolean DEH_mobjinfo_bits[NUMMOBJTYPES] = {0};
+dboolean DEH_mobjinfo_bits[ORIG_NUMMOBJTYPES] = {0};
 
 void deh_changeCompTranslucency(void)
 {
@@ -2200,7 +2220,8 @@ static uint_64_t getConvertedDEHBits(uint_64_t bits) {
 //---------------------------------------------------------------------------
 static void setMobjInfoValue(int mobjInfoIndex, int keyIndex, uint_64_t value) {
   mobjinfo_t *mi;
-  if (mobjInfoIndex >= NUMMOBJTYPES || mobjInfoIndex < 0) return;
+  if ( mobjInfoIndex < 0) return;
+  mobjInfoIndex = dsdhacked_map(mobjInfoIndex, DSDHACKED_THING);
   mi = &mobjinfo[mobjInfoIndex];
   switch (keyIndex) {
     case 0: mi->doomednum = (int)value; return;
@@ -2394,7 +2415,7 @@ static void deh_procThing(DEHFILE *fpin, FILE* fpout, char *line)
           if (bGetData==1) { // proff
             value = getConvertedDEHBits(value);
             mobjinfo[indexnum].flags = value;
-            if (indexnum < NUMMOBJTYPES)
+            if (indexnum < ORIG_NUMMOBJTYPES)
                 DEH_mobjinfo_bits[indexnum] = true; //e6y: changed by DEH
           }
           else {
@@ -2433,7 +2454,8 @@ static void deh_procThing(DEHFILE *fpin, FILE* fpout, char *line)
               );
             }
             mobjinfo[indexnum].flags = value; // e6y
-            DEH_mobjinfo_bits[indexnum] = true; //e6y: changed by DEH
+            if (indexnum < ORIG_NUMMOBJTYPES)
+                DEH_mobjinfo_bits[indexnum] = true; //e6y: changed by DEH
           }
         }
         if (fpout) {

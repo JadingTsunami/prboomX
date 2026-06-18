@@ -2950,7 +2950,7 @@ void G_SetFastParms(int fast_pending)
                 states[i].tics <<= 1;
       }
 
-    for (i = 0; i < NUMMOBJTYPES; i++) {
+    for (i = 0; i < num_mobjtypes; i++) {
         // technically we could always swap, but it
         // seems wasteful vs. a check-and-swap
         if (mobjinfo[i].fastspeed != mobjinfo[i].speed) {

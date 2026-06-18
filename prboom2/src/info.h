@@ -1505,7 +1505,7 @@ typedef enum {
   MT_EXTRA90, MT_EXTRA91, MT_EXTRA92, MT_EXTRA93, MT_EXTRA94,
   MT_EXTRA95, MT_EXTRA96, MT_EXTRA97, MT_EXTRA98, MT_EXTRA99,
 
-  NUMMOBJTYPES  // Counter of how many there are
+  ORIG_NUMMOBJTYPES  // Counter of how many there are
 } mobjtype_t;
 
 /********************************************************************
@@ -1575,8 +1575,10 @@ typedef struct
 
 } mobjinfo_t;
 
+extern mobjinfo_t orig_mobjinfo[];
 /* See p_mobj_h for addition more technical info */
-extern mobjinfo_t mobjinfo[NUMMOBJTYPES];
+extern mobjinfo_t* mobjinfo;
+extern int num_mobjtypes;
 extern state_t* states;
 extern int num_states;
 #endif
