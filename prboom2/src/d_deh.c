@@ -60,11 +60,16 @@
 #define TRUE 1
 #define FALSE 0
 
+
 // haleyjd: support for BEX SPRITES, SOUNDS, and MUSIC
-char *deh_spritenames[NUMSPRITES + 1];
 char *deh_musicnames[NUMMUSIC + 1];
-dboolean sprnames_state[NUMSPRITES+1];
 dboolean S_music_state[NUMMUSIC];
+
+// dsdhacked externalizations
+char **deh_spritenames;
+dboolean *sprnames_state;
+int num_sprites;
+char **sprnames;
 
 dboolean* S_sfx_state;
 char **deh_soundnames;
@@ -163,8 +168,9 @@ static void dsdhacked_install_default_entry(int index, dsdhacked_type_e dsdhacke
     }
 }
 
-static void dsdhacked_alloc_entry(int index, dsdhacked_type_e dsdhacked_type)
+static dboolean dsdhacked_alloc_entry(int index, dsdhacked_type_e dsdhacked_type)
 {
+    dboolean created = FALSE;
     switch (dsdhacked_type) {
         case DSDHACKED_SFX:
             if (index >= num_sfx) {
@@ -176,6 +182,7 @@ static void dsdhacked_alloc_entry(int index, dsdhacked_type_e dsdhacked_type)
                 memset(&S_sfx[num_sfx], 0, (new_num_sfx-num_sfx)*sizeof(sfxinfo_t));
                 memset(&S_sfx_state[num_sfx], 0, (new_num_sfx-num_sfx)*sizeof(dboolean));
                 num_sfx = new_num_sfx;
+                created = TRUE;
             }
             break;
         case DSDHACKED_STATE:
@@ -190,6 +197,7 @@ static void dsdhacked_alloc_entry(int index, dsdhacked_type_e dsdhacked_type)
                 memset(&deh_codeptr[num_states], 0, (new_num_states-num_states)*sizeof(actionf_t));
                 memset(&seenstate_tab[num_states], 0, (new_num_states-num_states)*sizeof(statenum_t));
                 num_states = new_num_states;
+                created = TRUE;
             }
             break;
         case DSDHACKED_THING:
@@ -200,14 +208,29 @@ static void dsdhacked_alloc_entry(int index, dsdhacked_type_e dsdhacked_type)
                     I_Error("Out of memory allocating expanded DSDHACKED mobjinfo array.");
                 memset(&mobjinfo[num_mobjtypes], 0, (new_num_mobjtypes-num_mobjtypes)*sizeof(mobjinfo_t));
                 num_mobjtypes = new_num_mobjtypes;
+                created = TRUE;
             }
             break;
         case DSDHACKED_SPRITE:
+            if (index >= num_sprites) {
+                int new_num_sprites = index + 1;
+                sprnames = realloc(sprnames, (new_num_sprites)*sizeof(char*));
+                deh_spritenames = realloc(deh_spritenames, (new_num_sprites)*sizeof(char*));
+                sprnames_state = realloc(sprnames_state, (new_num_sprites)*sizeof(dboolean));
+                if (!sprnames || !deh_spritenames || !sprnames_state)
+                    I_Error("Out of memory allocating expanded DSDHACKED sprite names array.");
+                memset(&sprnames[num_sprites], 0, (new_num_sprites-num_sprites)*sizeof(char*));
+                memset(&deh_spritenames[num_sprites], 0, (new_num_sprites-num_sprites)*sizeof(char*));
+                memset(&sprnames_state[num_sprites], 0, (new_num_sprites-num_sprites)*sizeof(dboolean));
+                num_sprites = new_num_sprites;
+                created = TRUE;
+            }
             break;
         default:
             I_Error("Bad DSDHACKED Type (%d) in dsdhacked_alloc_entry; internal error.", dsdhacked_type);
             break;
     }
+    return created;
 }
 
 static int dsdhacked_map(int index, dsdhacked_type_e dsdhacked_type)
@@ -226,6 +249,7 @@ static int dsdhacked_map(int index, dsdhacked_type_e dsdhacked_type)
             type_last = ORIG_NUMMOBJTYPES;
             break;
         case DSDHACKED_SPRITE:
+            type_last = ORIG_NUMSPRITES;
             break;
         default:
             I_Error("Bad DSDHACKED Type (%d) in dsdhacked_map; internal error.", dsdhacked_type);
@@ -233,9 +257,9 @@ static int dsdhacked_map(int index, dsdhacked_type_e dsdhacked_type)
     }
 
     // if it's in the original array, return it as it is
-    if (index > type_last) {
-        dsdhacked_alloc_entry(index, dsdhacked_type);
-        dsdhacked_install_default_entry(index, dsdhacked_type);
+    if (index >= type_last) {
+        if (dsdhacked_alloc_entry(index, dsdhacked_type))
+            dsdhacked_install_default_entry(index, dsdhacked_type);
     }
 
     return index;
@@ -1678,6 +1702,18 @@ void D_BuildBEXTables(void)
        I_Error("Out of memory allocating mobjinfo");
    memcpy(mobjinfo, orig_mobjinfo, sizeof(mobjinfo_t)*num_mobjtypes);
 
+   // sprites
+   num_sprites = ORIG_NUMSPRITES + 1;
+   sprnames = calloc(num_sprites, sizeof(char*));
+   deh_spritenames = calloc(num_sprites, sizeof(char*));
+   sprnames_state = calloc(num_sprites, sizeof(dboolean));
+   if (!sprnames || !deh_spritenames || !sprnames_state)
+       I_Error("Out of memory allocating sprite names");
+
+   memcpy(sprnames, orig_sprnames, sizeof(char*)*num_sprites);
+   memset(deh_spritenames, 0, sizeof(char*)*num_sprites);
+   memset(sprnames_state, 0, sizeof(dboolean)*num_sprites);
+
    // moved from ProcessDehFile, then we don't need the static int i
    for (i = 0; i < EXTRASTATES; i++)  // remember what they start as for deh xref
      deh_codeptr[i] = states[i].action;
@@ -1702,9 +1738,9 @@ void D_BuildBEXTables(void)
      states[i].mbf21stateflags = 0;
    }
 
-   for(i = 0; i < NUMSPRITES; i++)
+   for(i = 0; i < num_sprites - 1; i++)
       deh_spritenames[i] = strdup(sprnames[i]);
-   deh_spritenames[NUMSPRITES] = NULL;
+   deh_spritenames[num_sprites] = NULL;
 
    for(i = 1; i < NUMMUSIC; i++)
       deh_musicnames[i] = strdup(S_music[i].name);
@@ -2221,7 +2257,6 @@ static uint_64_t getConvertedDEHBits(uint_64_t bits) {
 static void setMobjInfoValue(int mobjInfoIndex, int keyIndex, uint_64_t value) {
   mobjinfo_t *mi;
   if ( mobjInfoIndex < 0) return;
-  mobjInfoIndex = dsdhacked_map(mobjInfoIndex, DSDHACKED_THING);
   mi = &mobjinfo[mobjInfoIndex];
   switch (keyIndex) {
     case 0: mi->doomednum = (int)value; return;
@@ -2338,6 +2373,7 @@ static void deh_procThing(DEHFILE *fpin, FILE* fpout, char *line)
   // Note that the mobjinfo[] array is base zero, but object numbers
   // in the dehacked file start with one.  Grumble.
   --indexnum;
+  indexnum = dsdhacked_map(indexnum, DSDHACKED_THING);
 
   // now process the stuff
   // Note that for Things we can look up the key and use its offset
@@ -2927,6 +2963,8 @@ static void deh_procSprite(DEHFILE *fpin, FILE* fpout, char *line) // Not suppor
 
   // killough 8/98: allow hex numbers in input:
   sscanf(inbuffer,"%s %i",key, &indexnum);
+
+  // jds: no dsdhacked since this does nothing
   if (fpout) fprintf(fpout,
                      "Ignoring Sprite offset change at index %d: %s\n",indexnum, key);
   while (!dehfeof(fpin) && *inbuffer && (*inbuffer != ' '))
@@ -3243,7 +3281,7 @@ static void deh_procText(DEHFILE *fpin, FILE* fpout, char *line)
   if (fromlen==4 && tolen==4)
     {
       i=0;
-      while (sprnames[i])  // null terminated list in info.c //jff 3/19/98
+      while (i < num_sprites && !found)  // null terminated list in info.c //jff 3/19/98
         {                                                      //check pointer
           if (!strnicmp(sprnames[i],inbuffer,fromlen) && !sprnames_state[i])         //not first char
             {
@@ -3551,6 +3589,7 @@ static void deh_procBexSprites(DEHFILE *fpin, FILE *fpout, char *line)
    char *strval;  // holds the string value of the line
    char candidate[5];
    int  rover;
+   dboolean found = FALSE;
 
    if(fpout)
       fprintf(fpout,"Processing sprite name substitution\n");
@@ -3593,9 +3632,20 @@ static void deh_procBexSprites(DEHFILE *fpin, FILE *fpout, char *line)
 	               candidate, deh_spritenames[rover]);
 
 	    sprnames[rover] = strdup(candidate);
+        found = TRUE;
 	    break;
 	 }
 	 rover++;
+      }
+
+      if (!found) {
+          int sindex = atoi(key);
+          if (sindex > 0) {
+              int remap_sprite = dsdhacked_map(sindex, DSDHACKED_SPRITE);
+              if(fpout)
+                  fprintf(fpout, "Substituting '%s' for DSDHACKED sprite index: %d (remapped to %d)\n", candidate, sindex, remap_sprite);
+              sprnames[remap_sprite] = strdup(candidate);
+          }
       }
    }
 }

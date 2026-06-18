@@ -210,7 +210,7 @@ typedef enum
   SPR_SP80, SPR_SP81, SPR_SP82, SPR_SP83, SPR_SP84, SPR_SP85, SPR_SP86, SPR_SP87, SPR_SP88, SPR_SP89,
   SPR_SP90, SPR_SP91, SPR_SP92, SPR_SP93, SPR_SP94, SPR_SP95, SPR_SP96, SPR_SP97, SPR_SP98, SPR_SP99,
 
-  NUMSPRITES  /* counter of how many there are */
+  ORIG_NUMSPRITES  /* counter of how many there are */
 
 } spritenum_t;
 
@@ -1310,7 +1310,6 @@ typedef struct
 
 /* these are in info.c */
 extern state_t  orig_states[ORIG_NUMSTATES];
-extern const char *sprnames[]; /* 1/17/98 killough - CPhipps - const */
 
 /********************************************************************
  * Thing enumeration -- must match info.c                           *
@@ -1581,4 +1580,7 @@ extern mobjinfo_t* mobjinfo;
 extern int num_mobjtypes;
 extern state_t* states;
 extern int num_states;
+extern int num_sprites;
+extern char **sprnames;
+extern const char* orig_sprnames[];
 #endif
