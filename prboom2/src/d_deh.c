@@ -3283,6 +3283,11 @@ static void deh_procText(DEHFILE *fpin, FILE* fpout, char *line)
       i=0;
       while (i < num_sprites && !found)  // null terminated list in info.c //jff 3/19/98
         {                                                      //check pointer
+            // skip null entries
+            if (!sprnames[i]) {
+                i++;
+                continue;
+            }
           if (!strnicmp(sprnames[i],inbuffer,fromlen) && !sprnames_state[i])         //not first char
             {
               if (fpout) fprintf(fpout,
