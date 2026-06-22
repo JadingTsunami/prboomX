@@ -1740,7 +1740,7 @@ void D_BuildBEXTables(void)
 
    for(i = 0; i < num_sprites - 1; i++)
       deh_spritenames[i] = strdup(sprnames[i]);
-   deh_spritenames[num_sprites] = NULL;
+   deh_spritenames[num_sprites - 1] = NULL;
 
    for(i = 1; i < NUMMUSIC; i++)
       deh_musicnames[i] = strdup(S_music[i].name);
