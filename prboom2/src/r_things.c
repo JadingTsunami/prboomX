@@ -114,7 +114,7 @@ int *screenheightarray;  // change to MAX_* // dropoff overflow
 spritedef_t *sprites;
 int numsprites;
 
-#define MAX_SPRITE_FRAMES 29          /* Macroized -- killough 1/25/98 */
+#define MAX_SPRITE_FRAMES 30          /* Macroized -- killough 1/25/98 */
 
 static spriteframe_t sprtemp[MAX_SPRITE_FRAMES];
 static int maxframe;
@@ -127,7 +127,7 @@ void R_InitSpritesRes(void)
 
   xtoviewangle = calloc(1, (SCREENWIDTH + 1) * sizeof(*xtoviewangle));
   negonearray = calloc(1, SCREENWIDTH * sizeof(*negonearray));
-  screenheightarray = calloc(1, SCREENWIDTH * sizeof(*screenheightarray));
+  screenheightarray = calloc(1, (SCREENWIDTH + 1) * sizeof(*screenheightarray));
 
   if (clipbot) free(clipbot);
 
