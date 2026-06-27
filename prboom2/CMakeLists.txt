@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.0...4.0)
 project("PrBoomX"
     VERSION 2.9.0
     HOMEPAGE_URL "https://github.com/JadingTsunami/prboomX")
+set (CMAKE_C_STANDARD 99)
 
 # Set a default build type if none was specified
 set(default_build_type "RelWithDebInfo")
@@ -210,7 +211,7 @@ else()
         -Wall -Wno-missing-field-initializers -Wwrite-strings -Wundef \
         -Wbad-function-cast -Wcast-align -Wcast-qual -Wdeclaration-after-statement \
         -Wpointer-arith -Wno-unused -Wno-switch -Wno-sign-compare -Wno-pointer-sign \
-        -ffast-math"
+        -ffast-math -Wno-error=incompatible-pointer-types"
     )
 endif()
 
