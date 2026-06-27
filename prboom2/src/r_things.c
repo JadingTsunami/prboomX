@@ -127,7 +127,7 @@ void R_InitSpritesRes(void)
 
   xtoviewangle = calloc(1, (SCREENWIDTH + 1) * sizeof(*xtoviewangle));
   negonearray = calloc(1, SCREENWIDTH * sizeof(*negonearray));
-  screenheightarray = calloc(1, (SCREENWIDTH + 1) * sizeof(*screenheightarray));
+  screenheightarray = calloc(1, SCREENWIDTH * sizeof(*screenheightarray));
 
   if (clipbot) free(clipbot);
 
@@ -580,7 +580,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
     sprtopscreen += (viewheight/2 - centery)<<FRACBITS;
   }
 
-  for (dcvars.x=vis->x1 ; dcvars.x<=vis->x2 ; dcvars.x++, frac += vis->xiscale)
+  for (dcvars.x=vis->x1 ; dcvars.x<=vis->x2 && dcvars.x < SCREENWIDTH; dcvars.x++, frac += vis->xiscale)
     {
       texturecolumn = frac>>FRACBITS;
       dcvars.texu = frac;
