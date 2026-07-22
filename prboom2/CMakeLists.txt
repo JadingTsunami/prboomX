@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0...4.0)
 
 project("PrBoomX"
-    VERSION 2.9.0
+    VERSION 2.9.1
     HOMEPAGE_URL "https://github.com/JadingTsunami/prboomX")
 set (CMAKE_C_STANDARD 99)
 

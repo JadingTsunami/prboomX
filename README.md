@@ -516,6 +516,7 @@ Sub-bullets list accepted alternate names for weapons.
 
 # Revision History
 
+* 2.9.1 - Overflow bug fixes.
 * 2.9.0 - Added DSDHACKED support.
 * 2.8.1 - Hotfix for menu crash bug (thanks to Doomworld user [RicemanRHys](https://www.doomworld.com/profile/64480-ricemanrhys/) for the report).
 * 2.8.0 - Added MBF21 support.

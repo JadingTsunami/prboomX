@@ -1740,7 +1740,7 @@ void D_BuildBEXTables(void)
 
    for(i = 0; i < num_sprites - 1; i++)
       deh_spritenames[i] = strdup(sprnames[i]);
-   deh_spritenames[num_sprites] = NULL;
+   deh_spritenames[num_sprites - 1] = NULL;
 
    for(i = 1; i < NUMMUSIC; i++)
       deh_musicnames[i] = strdup(S_music[i].name);
@@ -3283,6 +3283,11 @@ static void deh_procText(DEHFILE *fpin, FILE* fpout, char *line)
       i=0;
       while (i < num_sprites && !found)  // null terminated list in info.c //jff 3/19/98
         {                                                      //check pointer
+            // skip null entries
+            if (!sprnames[i]) {
+                i++;
+                continue;
+            }
           if (!strnicmp(sprnames[i],inbuffer,fromlen) && !sprnames_state[i])         //not first char
             {
               if (fpout) fprintf(fpout,

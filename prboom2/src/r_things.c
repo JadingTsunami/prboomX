@@ -114,7 +114,7 @@ int *screenheightarray;  // change to MAX_* // dropoff overflow
 spritedef_t *sprites;
 int numsprites;
 
-#define MAX_SPRITE_FRAMES 29          /* Macroized -- killough 1/25/98 */
+#define MAX_SPRITE_FRAMES 30          /* Macroized -- killough 1/25/98 */
 
 static spriteframe_t sprtemp[MAX_SPRITE_FRAMES];
 static int maxframe;
@@ -580,7 +580,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
     sprtopscreen += (viewheight/2 - centery)<<FRACBITS;
   }
 
-  for (dcvars.x=vis->x1 ; dcvars.x<=vis->x2 ; dcvars.x++, frac += vis->xiscale)
+  for (dcvars.x=vis->x1 ; dcvars.x<=vis->x2 && dcvars.x < SCREENWIDTH; dcvars.x++, frac += vis->xiscale)
     {
       texturecolumn = frac>>FRACBITS;
       dcvars.texu = frac;
