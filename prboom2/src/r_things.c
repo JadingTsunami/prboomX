@@ -261,6 +261,7 @@ static void R_InitSpriteDefs(const char * const * namelist)
       int k;
       int rot;
       const char *spritename = namelist[i];
+      if (!spritename) continue;
       int j = hash[R_SpriteNameHash(spritename) % numentries].index;
 
       if (j >= 0)
@@ -395,6 +396,7 @@ void R_InitSprites(const char * const *namelist)
   int i;
   for (i=0; i<SCREENWIDTH; i++)    // killough 2/8/98
     negonearray[i] = -1;
+
   R_InitSpriteDefs(namelist);
 }
 
