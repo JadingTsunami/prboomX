@@ -3877,7 +3877,11 @@ const byte* G_ReadDemoHeaderEx(const byte *demo_p, size_t size, unsigned int par
     // Eternity Engine also uses 255 demover, with other signatures.
     if (strncmp((const char *)demo_p, prdemosig, 5) != 0)
     {
-      I_Error("G_ReadDemoHeader: Extended demo format 255 found, but \"PR+UM\" string not found.");
+        if (!(params&RDH_SKIP_BAD_DEMO)) {
+            I_Error("G_ReadDemoHeader: Extended demo format 255 found, but \"PR+UM\" string not found.");
+        } else {
+            return NULL;
+        }
     }
 
     demo_p += 6;
@@ -3885,7 +3889,11 @@ const byte* G_ReadDemoHeaderEx(const byte *demo_p, size_t size, unsigned int par
 
     if (extension_version != 1)
     {
-      I_Error("G_ReadDemoHeader: Extended demo format version %d unrecognized.", extension_version);
+        if (!(params&RDH_SKIP_BAD_DEMO)) {
+            I_Error("G_ReadDemoHeader: Extended demo format version %d unrecognized.", extension_version);
+        } else {
+            return NULL;
+        }
     }
 
     num_extensions  =                 *demo_p++;
@@ -3907,14 +3915,22 @@ const byte* G_ReadDemoHeaderEx(const byte *demo_p, size_t size, unsigned int par
       {
         if (!umapinfo_loaded && !(params & RDH_SKIP_HEADER))
         {
-          I_Error("G_ReadDemoHeader: Playing demo with UMAPINFO extension without UMAPINFO loaded.");
+            if (!(params&RDH_SKIP_BAD_DEMO)) {
+                I_Error("G_ReadDemoHeader: Playing demo with UMAPINFO extension without UMAPINFO loaded.");
+            } else {
+                return NULL;
+            }
         }
         using_umapinfo = 1;
       }
       else
       {
         // ano - TODO better error handling here?
-        I_Error("G_ReadDemoHeader: Extended demo format extension unrecognized.");
+          if (!(params&RDH_SKIP_BAD_DEMO)) {
+            I_Error("G_ReadDemoHeader: Extended demo format extension unrecognized.");
+          } else {
+            return NULL;
+          }
       }
 
       demo_p += r_len;
@@ -3948,7 +3964,11 @@ const byte* G_ReadDemoHeaderEx(const byte *demo_p, size_t size, unsigned int par
           {
             if (cur != 0)
             {
-              I_Error("G_ReadDemoHeader: Unable to determine map for UMAPINFO demo.");
+                if (!(params&RDH_SKIP_BAD_DEMO)) {
+                    I_Error("G_ReadDemoHeader: Unable to determine map for UMAPINFO demo.");
+                } else {
+                    return NULL;
+                }
             }
             break;
           }
@@ -3974,7 +3994,12 @@ const byte* G_ReadDemoHeaderEx(const byte *demo_p, size_t size, unsigned int par
               break;
             }
 
-            I_Error("G_ReadDemoHeader: Unable to determine map for UMAPINFO demo.");
+            
+            if (!(params&RDH_SKIP_BAD_DEMO)) {
+                I_Error("G_ReadDemoHeader: Unable to determine map for UMAPINFO demo.");
+            } else {
+                return NULL;
+            }
           }
 
           episode = (episode * 10) + (cur - '0');
@@ -3992,7 +4017,11 @@ const byte* G_ReadDemoHeaderEx(const byte *demo_p, size_t size, unsigned int par
               break;
             }
 
-            I_Error("G_ReadDemoHeader: Unable to determine map for UMAPINFO demo.");
+            if (!(params&RDH_SKIP_BAD_DEMO)) {
+                I_Error("G_ReadDemoHeader: Unable to determine map for UMAPINFO demo.");
+            } else {
+                return NULL;
+            }
           }
 
           map = (map * 10) + (cur - '0');
@@ -4000,7 +4029,11 @@ const byte* G_ReadDemoHeaderEx(const byte *demo_p, size_t size, unsigned int par
       }
       else
       {
-        I_Error("G_ReadDemoHeader: Unable to determine map for UMAPINFO demo.");
+          if (!(params&RDH_SKIP_BAD_DEMO)) {
+              I_Error("G_ReadDemoHeader: Unable to determine map for UMAPINFO demo.");
+          } else {
+              return NULL;
+          }
       }
     
       demo_p = string_end;
@@ -4026,7 +4059,11 @@ const byte* G_ReadDemoHeaderEx(const byte *demo_p, size_t size, unsigned int par
         (demover >= 200  && demover <= 214) ||
         (demover == 221)))
   {
-    I_Error("G_ReadDemoHeader: Unknown demo format %d.", demover);
+      if (!(params&RDH_SKIP_BAD_DEMO)) {
+          I_Error("G_ReadDemoHeader: Unknown demo format %d.", demover);
+      } else {
+          return NULL;
+      }
   }
 
   if (demover < 200)     // Autodetect old demos
@@ -4107,7 +4144,12 @@ const byte* G_ReadDemoHeaderEx(const byte *demo_p, size_t size, unsigned int par
                 (map > 9) ||
                 (size >= 6 && (*(header_p + 4) == 2 || *(header_p + 6) == 2)))
             {
+
+            if (!(params&RDH_SKIP_BAD_DEMO)) {
               I_Error("Unrecognised demo format.");
+            } else {
+                return NULL;
+            }
             }
           }
 
@@ -4209,8 +4251,13 @@ const byte* G_ReadDemoHeaderEx(const byte *demo_p, size_t size, unsigned int par
         demo_p += 256-GAME_OPTION_SIZE;
     }
 
-  if (sizeof(comp_lev_str)/sizeof(comp_lev_str[0]) != MAX_COMPATIBILITY_LEVEL)
-    I_Error("G_ReadDemoHeader: compatibility level strings incomplete");
+  if (sizeof(comp_lev_str)/sizeof(comp_lev_str[0]) != MAX_COMPATIBILITY_LEVEL) {
+      if (!(params&RDH_SKIP_BAD_DEMO)) {
+          I_Error("G_ReadDemoHeader: compatibility level strings incomplete");
+      } else {
+          return NULL;
+      }
+  }
   lprintf(LO_INFO, "G_DoPlayDemo: playing demo with %s compatibility\n",
     comp_lev_str[compatibility_level]);
 
@@ -4295,12 +4342,13 @@ void G_DoPlayDemo(void)
 {
   if (LoadDemo(defdemoname, &demobuffer, &demolength, &demolumpnum))
   {
-    demo_p = G_ReadDemoHeaderEx(demobuffer, demolength, RDH_SAFE);
+    demo_p = G_ReadDemoHeaderEx(demobuffer, demolength, RDH_SAFE|(singledemo?0:RDH_SKIP_BAD_DEMO));
 
     gameaction = ga_nothing;
     usergame = false;
 
-    demoplayback = true;
+    if (demo_p)
+        demoplayback = true;
     R_SmoothPlaying_Reset(NULL); // e6y
   }
   else

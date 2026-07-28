@@ -106,6 +106,7 @@ void G_SetSpeed(void);
 //e6y
 #define RDH_SAFE 0x00000001
 #define RDH_SKIP_HEADER 0x00000002
+#define RDH_SKIP_BAD_DEMO 0x00000004
 const byte* G_ReadDemoHeaderEx(const byte* demo_p, size_t size, unsigned int params);
 const byte* G_ReadDemoHeader(const byte* demo_p, size_t size);
 void G_CalculateDemoParams(const byte *demo_p);
