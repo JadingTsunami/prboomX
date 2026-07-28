@@ -745,7 +745,15 @@ void M_MouseMLook(int choice)
 
 void M_MouseAccel(int choice)
 {
-  M_Mouse(choice, &mouse_acceleration);
+  switch(choice)
+  {
+  case 0:
+    mouse_acceleration = MAX(mouse_acceleration - 1, 0);
+    break;
+  case 1:
+    mouse_acceleration = MIN(mouse_acceleration + 1, 99);
+    break;
+  }
   MouseAccelChanging();
 }
 
@@ -1083,6 +1091,7 @@ int AccelerateMouse(int val)
 }
 
 int mlooky = 0;
+int mlooky_remainder = 0;
 
 void e6y_G_Compatibility(void)
 {

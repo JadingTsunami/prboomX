@@ -75,6 +75,7 @@ typedef struct camera_s
   angle_t PrevAngle;
   angle_t PrevPitch;
   int type;
+  int keyboardangleturn;
 } camera_t;
 
 extern dboolean wasWiped;
@@ -171,6 +172,9 @@ extern float skyUpShift;
 extern float skyXShift;
 extern float skyYShift;
 extern dboolean mlook_or_fov;
+
+extern int maxViewPitch;
+extern int minViewPitch;
 
 extern hu_textline_t  w_hudadd;
 extern hu_textline_t  w_centermsg;
@@ -313,6 +317,7 @@ int AccelerateMouse(int val);
 void MouseAccelChanging(void);
 
 extern int mlooky;
+extern int mlooky_remainder;
 extern int realtic_clock_rate;
 
 void e6y_G_Compatibility(void);
