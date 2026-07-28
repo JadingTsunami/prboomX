@@ -158,6 +158,10 @@ static void dsdhacked_install_default_entry(int index, dsdhacked_type_e dsdhacke
         case DSDHACKED_THING:
             mobjinfo[index].fastspeed = MBF21_FAST_SPEED_DEFAULT;
             mobjinfo[index].meleerange = 64*FRACUNIT;
+            mobjinfo[index].droppeditem = MT_NULL;
+            mobjinfo[index].infightinggroup = MBF21_INFIGHTING_GROUP_DEFAULT;
+            mobjinfo[index].projectilegroup = MBF21_PROJECTILE_GROUP_DEFAULT;
+            mobjinfo[index].splashgroup = MBF21_SPLASH_GROUP_DEFAULT;
             break;
         case DSDHACKED_SPRITE:
             // no defaults for sprites, per spec
