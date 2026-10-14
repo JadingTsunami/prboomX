@@ -32,6 +32,15 @@ struct BossAction
 	int tag;
 };
 
+typedef enum
+{
+    ACTIONPERMISSION_NONE = -1,
+    ACTIONPERMISSION_ALLOW = 0, // default
+    ACTIONPERMISSION_REQUIRE = 1,
+    ACTIONPERMISSION_DISALLOW = 2,
+    ACTIONPERMISSION_LAST
+} MapActionPermission;
+
 struct MapEntry
 {
 	char *mapname;
@@ -57,6 +66,10 @@ struct MapEntry
 	unsigned int propertycount;
 	struct MapProperty *properties;
 	struct BossAction *bossactions;
+
+    MapActionPermission jumping;
+    MapActionPermission crouching;
+    MapActionPermission freeaim;
 };
 
 struct MapList

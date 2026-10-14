@@ -2034,3 +2034,14 @@ const char* C_CommandComplete(const char* partial)
     /* CVAR completion returns null on failure */
     return C_CvarComplete(partial);
 }
+
+
+static void C_WarnPlayerCompatInternal()
+{
+    doom_printf("WARNING: Map requires unsupported features.");
+}
+
+void C_WarnPlayerCompat()
+{
+    C_schedule(5, C_WarnPlayerCompatInternal);
+}

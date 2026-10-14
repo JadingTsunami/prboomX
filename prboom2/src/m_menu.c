@@ -590,7 +590,7 @@ void M_AddEpisode(const char *map, const char *gfx, const char *txt, const char 
 
 	{
 		int epi, mapnum;
-		if (EpiDef.numitems >= 8) return;
+		if (EpiDef.numitems >= 10) return;
 		G_ValidateMapName(map, &epi, &mapnum);
 		EpiMenuEpi[EpiDef.numitems] = epi;
 		EpiMenuMap[EpiDef.numitems] = mapnum;
