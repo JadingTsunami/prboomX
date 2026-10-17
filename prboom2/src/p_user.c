@@ -287,7 +287,7 @@ void P_MovePlayer (player_t* player)
     mo->momz = upmove << 8;
   }
 
-  if (comperr(comperr_allowjump))
+  if (GetJump())
   {
     if (upmove > 0 && onground && player == &players[consoleplayer] && !(player->mo->flags & MF_FLY))
     {
@@ -333,7 +333,7 @@ void P_MovePlayer (player_t* player)
           P_SideThrust(player,mo->angle-ANG90,cmd->sidemove*movefactor);
         }
       }
-      else if (comperr(comperr_allowjump))
+      else if (GetJump())
       {
         if (!onground)
         {

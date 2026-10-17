@@ -150,6 +150,8 @@ extern int comp_skytransfers;
 
 extern int comp_fix_blockmap;
 
+extern dboolean ignore_umapinfo_permissions;
+
 // -------------------------------------------
 // Language.
 extern  Language_t   language;

@@ -769,7 +769,7 @@ static void P_BulletSlope(mobj_t *mo)
 {
   angle_t an = mo->angle;    // see which target is to be aimed at
 
-  if (comperr(comperr_freeaim))
+  if (IsFreeAimEnabled())
     bulletslope = finetangent[(ANG90 - mo->pitch) >> ANGLETOFINESHIFT];
   else
   {

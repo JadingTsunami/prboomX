@@ -86,6 +86,7 @@
 #include "r_demo.h"
 #include "d_deh.h"
 #include "e6y.h"
+#include "umapinfo.h"
 
 #include "m_io.h"
 
@@ -537,7 +538,7 @@ void M_ChangeMouseLook(void)
 
 #ifdef GL_DOOM
   if (gl_skymode == skytype_auto)
-    gl_drawskys = (movement_mouselook ? skytype_skydome : skytype_standard);
+    gl_drawskys = (GetMouseLook() ? skytype_skydome : skytype_standard);
   else
     gl_drawskys = gl_skymode;
 #endif // GL_DOOM
@@ -576,9 +577,34 @@ void M_ChangeScreenMultipleFactor(void)
   V_ChangeScreenResolution();
 }
 
+dboolean GetJump(void)
+{
+    if (gamemapinfo && gamemapinfo->jumping == ACTIONPERMISSION_DISALLOW && !ignore_umapinfo_permissions)
+        return false;
+    else if (gamemapinfo && gamemapinfo->jumping == ACTIONPERMISSION_REQUIRE && !ignore_umapinfo_permissions)
+        return true;
+
+    return comperr(comperr_allowjump);
+}
+
+dboolean IsFreeAimEnabled(void)
+{
+    if (gamemapinfo && gamemapinfo->freeaim == ACTIONPERMISSION_DISALLOW && !ignore_umapinfo_permissions)
+        return false;
+    else if (gamemapinfo && gamemapinfo->freeaim == ACTIONPERMISSION_REQUIRE && !ignore_umapinfo_permissions)
+        return true;
+
+    return comperr(comperr_freeaim);
+}
+
 dboolean GetMouseLook(void)
 {
-  return movement_mouselook;
+    if (gamemapinfo && gamemapinfo->freeaim == ACTIONPERMISSION_DISALLOW && !ignore_umapinfo_permissions)
+        return false;
+    else if (gamemapinfo && gamemapinfo->freeaim == ACTIONPERMISSION_REQUIRE && !ignore_umapinfo_permissions)
+        return true;
+
+    return movement_mouselook;
 }
 dboolean HaveMouseLook(void)
 {
