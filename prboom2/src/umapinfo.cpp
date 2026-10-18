@@ -629,7 +629,6 @@ static int ParseStandardProperty(Scanner &scanner, MapEntry *mape)
         mape->crouching = ParseMovementOptionPermission(scanner);
 
         lprintf(LO_WARN, "Crouching required by map %s but crouching is not supported.\n", mape->mapname);
-        C_WarnPlayerCompat();
     }
 	else if (!stricmp(pname, "freeaim"))
     {

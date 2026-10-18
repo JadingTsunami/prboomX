@@ -47,6 +47,6 @@ typedef struct _command {
     void (*func)(char*);
 } command;
 
-void C_WarnPlayerCompat();
+void C_SchedulePlayerMessage(char* msg);
 
 #endif
