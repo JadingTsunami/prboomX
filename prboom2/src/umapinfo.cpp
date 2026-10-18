@@ -30,9 +30,12 @@ extern "C"
 #include "g_game.h"
 #include "doomdef.h"
 #include "doomstat.h"
+#include "lprintf.h"
+#include "c_cmd.h"
 
 void M_AddEpisode(const char *map, const char *gfx, const char *txt, const char *alpha);
 void M_ClearEpisodes(void);
+static MapActionPermission ParseMovementOptionPermission(Scanner &scanner);
 
 MapList Maps;
 
@@ -617,6 +620,20 @@ static int ParseStandardProperty(Scanner &scanner, MapEntry *mape)
 
 		}
 	}
+	else if (!stricmp(pname, "jumping"))
+    {
+        mape->jumping = ParseMovementOptionPermission(scanner);
+    }
+	else if (!stricmp(pname, "crouching"))
+    {
+        mape->crouching = ParseMovementOptionPermission(scanner);
+
+        lprintf(LO_WARN, "Crouching required by map %s but crouching is not supported.\n", mape->mapname);
+    }
+	else if (!stricmp(pname, "freeaim"))
+    {
+        mape->freeaim = ParseMovementOptionPermission(scanner);
+    }
 	else
 	{
 		do
@@ -660,6 +677,32 @@ static int ParseMapEntry(Scanner &scanner, MapEntry *val)
 		ParseStandardProperty(scanner, val);
 	}
 	return 1;
+}
+
+// -----------------------------------------------
+//
+// Parses a movement option permission
+//
+// -----------------------------------------------
+
+static MapActionPermission ParseMovementOptionPermission(Scanner &scanner)
+{
+    MapActionPermission permission = ACTIONPERMISSION_NONE;
+    scanner.MustGetToken(TK_Identifier);
+	char *pname = strdup(scanner.string);
+
+	if (!stricmp(pname, "require")) {
+        permission = ACTIONPERMISSION_REQUIRE;
+    } else if (!stricmp(pname, "allow")) {
+        permission = ACTIONPERMISSION_ALLOW;
+    } else if (!stricmp(pname, "disallow")) {
+        permission = ACTIONPERMISSION_DISALLOW;
+    } else {
+        scanner.ErrorF("One of: 'require', 'allow', or 'disallow' expected");
+    }
+
+    free(pname);
+    return permission;
 }
 
 // -----------------------------------------------

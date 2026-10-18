@@ -441,6 +441,8 @@ default_t defaults[] =
   {"comp_voodooscroller",{&default_comp[comp_voodooscroller]},{0},0,1,def_bool,ss_comp,&comp[comp_voodooscroller]},
   {"comp_reservedlineflag",{&default_comp[comp_reservedlineflag]},{0},0,1,def_bool,ss_comp,&comp[comp_reservedlineflag]},
 
+  {"ignore_umapinfo_permissions",{&ignore_umapinfo_permissions},{0},0,1,def_bool,ss_comp},
+
   {"Sound settings",{NULL},{0},UL,UL,def_none,ss_none},
   {"snd_pcspeaker",{&snd_pcspeaker},{0}, 0, 1, def_bool,ss_none},
   {"sound_card",{&snd_card},{-1},-1,7,       // jff 1/18/98 allow Allegro drivers

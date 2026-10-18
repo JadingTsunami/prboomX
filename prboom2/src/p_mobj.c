@@ -1667,7 +1667,7 @@ mobj_t* P_SpawnPlayerMissile(mobj_t* source,mobjtype_t type)
   angle_t an = source->angle;
 
   // killough 7/19/98: autoaiming was not in original beta
-  if (comperr(comperr_freeaim))
+  if (IsFreeAimEnabled())
     slope = finetangent[(ANG90 - source->pitch) >> ANGLETOFINESHIFT];
   else
     {

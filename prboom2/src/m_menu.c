@@ -590,7 +590,7 @@ void M_AddEpisode(const char *map, const char *gfx, const char *txt, const char 
 
 	{
 		int epi, mapnum;
-		if (EpiDef.numitems >= 8) return;
+		if (EpiDef.numitems >= 10) return;
 		G_ValidateMapName(map, &epi, &mapnum);
 		EpiMenuEpi[EpiDef.numitems] = epi;
 		EpiMenuMap[EpiDef.numitems] = mapnum;
@@ -3353,6 +3353,7 @@ setup_menu_t gen_settings_prboomx[] = { // prboomX General Settings
   {"Autoload Time Warp Timelines"     ,S_YESNO       ,m_null,G_X,G_Y+8*8, {"autoload_timeline"}},
   {"Autosave Timeline upon Quit"      ,S_YESNO       ,m_null,G_X,G_Y+9*8, {"autosave_timeline_on_exit"}},
   {"Fix Blockmap bug"                 ,S_YESNO       ,m_null,G_X,G_Y+10*8, {"comp_fix_blockmap"}},
+  {"Ignore UMAPINFO permissions"      ,S_YESNO       ,m_null,G_X,G_Y+11*8, {"ignore_umapinfo_permissions"}, 0, 0, M_ChangeMouseLook},
 
   {"<- PREV",S_SKIP|S_PREV, m_null,KB_PREV, KB_Y+20*8, {gen_settings1}},
   {"NEXT ->",S_SKIP|S_NEXT,m_null,KB_NEXT,KB_Y+20*8, {gen_settings2}},

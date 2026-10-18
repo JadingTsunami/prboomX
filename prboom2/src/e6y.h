@@ -363,4 +363,6 @@ int I_MessageBox(const char* text, unsigned int type);
 
 dboolean SmoothEdges(unsigned char * buffer,int w, int h);
 
+dboolean IsFreeAimEnabled(void);
+dboolean GetJump(void);
 #endif

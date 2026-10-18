@@ -17,6 +17,7 @@ Install [PrBoom-Plus](https://github.com/coelckers/prboom-plus) and place the bi
 
 * [MBF21](https://github.com/kraflab/mbf21/blob/master/docs/spec.md) support
 * [DSDHACKED](https://github.com/kraflab/dsda-doom/blob/master/docs/dsdhacked.md) support
+* [UMAPINFO3.0](https://github.com/doom-cross-port-collab/umapinfo) support
 * Zip file support
     * Note all WAD/DEH/BEX in the zip will be loaded
 * Drop-down console (default key bind: `~`)
@@ -516,6 +517,7 @@ Sub-bullets list accepted alternate names for weapons.
 
 # Revision History
 
+* 2.9.3 - UMAPINFO 3.0 support
 * 2.9.2 - Workaround for bug in `DSDHacked` specification.
 * 2.9.1 - Overflow bug fixes.
 * 2.9.0 - Added DSDHACKED support.

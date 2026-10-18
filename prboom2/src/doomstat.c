@@ -66,6 +66,8 @@ int comp_skytransfers;
 // blockmap chunks despite their bounding box being inside
 int comp_fix_blockmap;
 
+dboolean ignore_umapinfo_permissions;
+
 // v1.1-like pitched sounds
 int pitched_sounds;        // killough
 

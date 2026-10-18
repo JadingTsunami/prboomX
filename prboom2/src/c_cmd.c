@@ -32,8 +32,7 @@
 #include "r_main.h"
 #include "p_map.h"
 #include "d_deh.h" 
-#include "p_tick.h"
-#include "e6y.h" // G_GotoNextLevel()
+#include "e6y.h"
 #include "umapinfo.h"
 #include "hu_stuff.h"
 #include "lprintf.h"
@@ -2033,4 +2032,18 @@ const char* C_CommandComplete(const char* partial)
 
     /* CVAR completion returns null on failure */
     return C_CvarComplete(partial);
+}
+
+static char scheduled_player_message[HU_MSGWIDTH+1];
+
+static void C_SchedulePlayerMessageInternal()
+{
+    doom_printf("%s", scheduled_player_message);
+}
+
+void C_SchedulePlayerMessage(char* msg)
+{
+    memset(scheduled_player_message,0,sizeof(scheduled_player_message));
+    strncpy(scheduled_player_message, msg, HU_MSGWIDTH);
+    C_schedule(1, C_SchedulePlayerMessageInternal);
 }

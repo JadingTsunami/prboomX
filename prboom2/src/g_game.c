@@ -166,6 +166,8 @@ dboolean done_autoswitch;
 
 dboolean coop_spawns;
 
+dboolean warn_if_ignoring_permissions = true;
+
 // e6y
 // There is a new command-line switch "-shorttics".
 // This makes it possible to practice routes and tricks
@@ -974,6 +976,11 @@ static void G_DoLoadLevel (void)
           first=0;
         }
     }
+
+  warn_if_ignoring_permissions = true;
+
+  if (gamemapinfo && gamemapinfo->crouching == ACTIONPERMISSION_REQUIRE)
+      C_SchedulePlayerMessage("WARNING: Map requires unsupported crouching.");
 }
 
 
