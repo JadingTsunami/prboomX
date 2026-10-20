@@ -115,6 +115,7 @@ extern int process_priority;
 extern int vanilla_keymap;
 
 extern dboolean window_focused;
+void I_ReadMouse(void);
 void UpdateGrab(void);
 
 #endif
