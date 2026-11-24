@@ -1314,6 +1314,9 @@ void A_GunFlashTo(player_t *player, pspdef_t *psp)
     if (!mbf21_features || !psp->state)
         return;
 
+    state = psp->state->stateargs[0];
+    nothirdperson = psp->state->stateargs[1];
+
     // yay for double negatives
     if (!nothirdperson)
         P_SetMobjState(player->mo, S_PLAY_ATK2);
