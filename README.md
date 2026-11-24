@@ -6,7 +6,7 @@ This is my own personal fork of PrBoom-Plus. It contains quality-of-play upgrade
 
 # Installation
 
-* [Latest release](https://github.com/JadingTsunami/prboomX/releases/tag/prboomX-2.9.0)
+* [Latest release](https://github.com/JadingTsunami/prboomX/releases/tag/prboomX-2.9.4)
 * [Development builds](https://github.com/JadingTsunami/prboomX/actions)
 
 Install [PrBoom-Plus](https://github.com/coelckers/prboom-plus) and place the binaries for prboomX alongside your `prboom-plus` executable. Run the `prboomX` executable to launch prboomX instead. Your PrBoom-Plus configuration and save data will not be affected; you can run both in parallel.
@@ -516,7 +516,7 @@ Sub-bullets list accepted alternate names for weapons.
     * [Cure7](https://opengameart.org/content/cure-magic) by [Someoneman](https://opengameart.org/users/someoneman), CC0
 
 # Revision History
-
+* 2.9.4 - Fix crash bug with `A_GunFlashTo()`(thanks to Doomworld user [mjt6161987](https://www.doomworld.com/profile/26124-mjt6161987/) for the report).
 * 2.9.3 - UMAPINFO 3.0 support
 * 2.9.2 - Workaround for bug in `DSDHacked` specification.
 * 2.9.1 - Overflow bug fixes.
